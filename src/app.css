@@ -74,6 +74,13 @@ body {
   overflow: hidden;
 }
 
+/* Widget window: force full transparency so rounded corners don't have white edges */
+.widget-window,
+.widget-window body {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
 /* Custom scrollbar for dashboard */
 ::-webkit-scrollbar {
   width: 6px;

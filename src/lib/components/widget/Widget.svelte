@@ -288,14 +288,19 @@
 </div>
 
 <style>
-  :global(html), :global(body) {
+  /* Force every layer transparent so the rounded corners don't show white */
+  :global(html),
+  :global(body),
+  :global(#app),
+  :global(body > div) {
     background: transparent !important;
+    background-color: transparent !important;
   }
 
   .widget-outer {
     width: 100%;
     height: 100vh;
-    padding: 2px;
+    padding: 4px;
     background: transparent;
   }
 

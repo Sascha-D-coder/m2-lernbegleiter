@@ -76,6 +76,15 @@ pub fn run() {
                 })
                 .build(app)?;
 
+            // Force widget webview background to transparent (fixes white corners on macOS)
+            #[cfg(target_os = "macos")]
+            {
+                use tauri::webview::Color;
+                if let Some(widget) = app.get_webview_window("widget") {
+                    let _ = widget.set_background_color(Some(Color(0, 0, 0, 0)));
+                }
+            }
+
             // Intercept dashboard close → hide instead + show widget
             if let Some(dashboard) = app.get_webview_window("dashboard") {
                 let app_handle = app.handle().clone();
