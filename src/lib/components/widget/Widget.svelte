@@ -11,6 +11,14 @@
   import DayProgress from "./DayProgress.svelte";
   import QuickStats from "./QuickStats.svelte";
 
+  // Keep theme in sync with settings store
+  let currentTheme = $derived(getSettings().theme);
+  $effect(() => {
+    if (typeof document !== "undefined" && currentTheme) {
+      document.documentElement.setAttribute("data-theme", currentTheme);
+    }
+  });
+
   // Derived reactive values from stores
   let todayAmboss = $derived(getTodayAmbossDay());
   let todayCalDay = $derived(getTodayCalendarDay());
@@ -79,6 +87,11 @@
     await loadAmbossDays();
 
     const settings = getSettings();
+
+    // Apply theme to widget window (sync with dashboard)
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("data-theme", settings.theme);
+    }
     if (!isPlanGenerated()) {
       try {
         const resp = await fetch('/amboss-plan.json');

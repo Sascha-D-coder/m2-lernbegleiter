@@ -2,17 +2,26 @@ use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
     Manager,
+    WindowEvent,
 };
 
 #[tauri::command]
 async fn toggle_dashboard(app: tauri::AppHandle) -> Result<(), String> {
-    if let Some(window) = app.get_webview_window("dashboard") {
-        let visible = window.is_visible().map_err(|e| e.to_string())?;
+    if let Some(dashboard) = app.get_webview_window("dashboard") {
+        let visible = dashboard.is_visible().map_err(|e| e.to_string())?;
         if visible {
-            window.hide().map_err(|e| e.to_string())?;
+            // Hide dashboard → show widget again
+            dashboard.hide().map_err(|e| e.to_string())?;
+            if let Some(widget) = app.get_webview_window("widget") {
+                let _ = widget.show();
+            }
         } else {
-            window.show().map_err(|e| e.to_string())?;
-            window.set_focus().map_err(|e| e.to_string())?;
+            // Show dashboard → hide widget
+            if let Some(widget) = app.get_webview_window("widget") {
+                let _ = widget.hide();
+            }
+            dashboard.show().map_err(|e| e.to_string())?;
+            dashboard.set_focus().map_err(|e| e.to_string())?;
         }
     }
     Ok(())
@@ -40,15 +49,23 @@ pub fn run() {
                 .on_menu_event(|app_handle: &tauri::AppHandle, event| {
                     match event.id.as_ref() {
                         "show" => {
-                            if let Some(window) = app_handle.get_webview_window("widget") {
-                                let _ = window.show();
-                                let _ = window.set_focus();
+                            // Show widget → hide dashboard
+                            if let Some(dashboard) = app_handle.get_webview_window("dashboard") {
+                                let _ = dashboard.hide();
+                            }
+                            if let Some(widget) = app_handle.get_webview_window("widget") {
+                                let _ = widget.show();
+                                let _ = widget.set_focus();
                             }
                         }
                         "dashboard" => {
-                            if let Some(window) = app_handle.get_webview_window("dashboard") {
-                                let _ = window.show();
-                                let _ = window.set_focus();
+                            // Show dashboard → hide widget
+                            if let Some(widget) = app_handle.get_webview_window("widget") {
+                                let _ = widget.hide();
+                            }
+                            if let Some(dashboard) = app_handle.get_webview_window("dashboard") {
+                                let _ = dashboard.show();
+                                let _ = dashboard.set_focus();
                             }
                         }
                         "quit" => {
@@ -58,6 +75,24 @@ pub fn run() {
                     }
                 })
                 .build(app)?;
+
+            // Intercept dashboard close → hide instead + show widget
+            if let Some(dashboard) = app.get_webview_window("dashboard") {
+                let app_handle = app.handle().clone();
+                dashboard.on_window_event(move |event| {
+                    if let WindowEvent::CloseRequested { api, .. } = event {
+                        // Prevent actual close, just hide
+                        api.prevent_close();
+                        if let Some(d) = app_handle.get_webview_window("dashboard") {
+                            let _ = d.hide();
+                        }
+                        // Show widget again
+                        if let Some(w) = app_handle.get_webview_window("widget") {
+                            let _ = w.show();
+                        }
+                    }
+                });
+            }
 
             Ok(())
         })

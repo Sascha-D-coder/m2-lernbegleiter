@@ -100,6 +100,27 @@
     }
   }
 
+  // --- AMBOSS link helpers ---
+  async function openAmbossChapter(chapter: string) {
+    const url = `https://next.amboss.com/de/search?q=${encodeURIComponent(chapter)}`;
+    try {
+      const { open } = await import("@tauri-apps/plugin-shell");
+      await open(url);
+    } catch {
+      window.open(url, "_blank");
+    }
+  }
+
+  async function openAmbossKreuzen() {
+    const url = "https://next.amboss.com/de/questions";
+    try {
+      const { open } = await import("@tauri-apps/plugin-shell");
+      await open(url);
+    } catch {
+      window.open(url, "_blank");
+    }
+  }
+
   const MONTH_NAMES_DE = [
     "Januar", "Februar", "M\u00e4rz", "April", "Mai", "Juni",
     "Juli", "August", "September", "Oktober", "November", "Dezember"
@@ -375,7 +396,7 @@
         {@const selStyle = phaseStyle(sel.phase)}
         <div class="rounded-xl bg-bg-secondary border border-border p-4 sticky bottom-0">
           <div class="flex items-start justify-between">
-            <div>
+            <div class="flex-1 min-w-0">
               <div class="text-xs font-medium uppercase tracking-wider {selStyle.text}">
                 {PHASE_COLORS[sel.phase]?.label ?? sel.phase}
               </div>
@@ -386,15 +407,42 @@
                 <p class="text-sm text-text-secondary mt-1">
                   Tag {sel.ambossDay.day_number}: {sel.ambossDay.subject} &ndash; {sel.ambossDay.sub_topic}
                 </p>
-                <div class="flex flex-wrap gap-2 mt-2">
-                  {#if sel.splitPart}
-                    <span class="rounded-md bg-bg-primary px-2 py-0.5 text-xs text-text-secondary">
-                      {splitLabel(sel.splitPart)}
-                    </span>
+
+                <!-- Chapters (clickable) -->
+                {#if sel.ambossDay.chapters && sel.ambossDay.chapters.length > 0}
+                  <div class="mt-2">
+                    <div class="text-xs font-medium text-text-muted mb-1.5">Kapitel:</div>
+                    <div class="flex flex-wrap gap-1.5">
+                      {#each sel.ambossDay.chapters as chapter}
+                        <button
+                          onclick={() => openAmbossChapter(chapter)}
+                          class="rounded-md bg-bg-primary border border-border/50 px-2 py-0.5 text-xs text-text-secondary hover:text-accent hover:border-accent/40 transition-colors cursor-pointer"
+                        >
+                          {chapter}
+                        </button>
+                      {/each}
+                    </div>
+                  </div>
+                {/if}
+
+                <!-- Action buttons (Lesen / Kreuzen) -->
+                <div class="flex flex-wrap gap-2 mt-3">
+                  {#if sel.splitPart === "reading" || sel.splitPart === "both"}
+                    <button
+                      onclick={() => openAmbossChapter(sel.ambossDay!.chapters[0] ?? sel.ambossDay!.subject)}
+                      class="rounded-md bg-accent/15 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/25 transition-colors cursor-pointer"
+                    >
+                      📖 Kapitel lesen
+                    </button>
                   {/if}
-                  <span class="rounded-md bg-bg-primary px-2 py-0.5 text-xs text-text-secondary">
-                    {sel.ambossDay.question_count} Fragen
-                  </span>
+                  {#if sel.splitPart === "kreuzen" || sel.splitPart === "both"}
+                    <button
+                      onclick={openAmbossKreuzen}
+                      class="rounded-md bg-accent/15 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/25 transition-colors cursor-pointer"
+                    >
+                      ✏️ {sel.ambossDay.question_count} Fragen kreuzen
+                    </button>
+                  {/if}
                   <span class="rounded-md bg-bg-primary px-2 py-0.5 text-xs text-text-secondary">
                     Anki: {sel.ankiTarget}
                   </span>
@@ -467,7 +515,14 @@
                     </span>
                   </td>
                   <td class="px-3 py-2 text-text-primary font-medium truncate max-w-[120px]">
-                    {day.ambossDay?.subject ?? ""}
+                    {#if day.ambossDay}
+                      <button
+                        onclick={(e: MouseEvent) => { e.stopPropagation(); openAmbossChapter(day.ambossDay!.chapters?.[0] ?? day.ambossDay!.subject); }}
+                        class="hover:text-accent transition-colors"
+                      >
+                        {day.ambossDay.subject}
+                      </button>
+                    {/if}
                   </td>
                   <td class="px-3 py-2 text-text-secondary truncate max-w-[180px]">
                     {day.ambossDay?.sub_topic ?? ""}

@@ -99,9 +99,17 @@
     }
   }
 
+  // Apply theme visually whenever local state changes
   $effect(() => {
     applyTheme(theme);
   });
+
+  // Save theme immediately when toggled (don't wait for "Speichern")
+  async function setTheme(t: string) {
+    theme = t;
+    applyTheme(t);
+    await saveSettings({ theme: t });
+  }
 
   async function handleSave() {
     saving = true;
@@ -176,13 +184,13 @@
       </div>
       <div class="flex rounded-lg border border-border overflow-hidden">
         <button
-          onclick={() => theme = "light"}
+          onclick={() => setTheme("light")}
           class="px-3 py-1.5 text-xs font-medium transition-colors {theme === 'light' ? 'bg-accent text-white' : 'bg-bg-primary text-text-secondary hover:text-text-primary'}"
         >
           Hell
         </button>
         <button
-          onclick={() => theme = "dark"}
+          onclick={() => setTheme("dark")}
           class="px-3 py-1.5 text-xs font-medium transition-colors {theme === 'dark' ? 'bg-accent text-white' : 'bg-bg-primary text-text-secondary hover:text-text-primary'}"
         >
           Dunkel

@@ -157,7 +157,7 @@ export async function startTest(
     [config.scope, config.subject ?? null, config.difficulty, config.questionCount, 14]
   );
 
-  const testId = result.lastInsertId;
+  const testId = result.lastInsertId ?? 0;
 
   currentTest = {
     id: testId,
