@@ -101,13 +101,21 @@
   }
 
   // --- AMBOSS link helpers ---
+  import { toastInfo, toastWarning } from "$lib/stores/toastStore.svelte";
+
   async function openAmbossChapter(chapter: string) {
+    if (!chapter) {
+      toastWarning("Kein Kapitel verknüpft. Öffne AMBOSS manuell und suche das Thema.");
+      return;
+    }
     const url = `https://next.amboss.com/de/search?q=${encodeURIComponent(chapter)}`;
     try {
       const { open } = await import("@tauri-apps/plugin-shell");
       await open(url);
+      toastInfo(`Öffne "${chapter}" in AMBOSS...`);
     } catch {
       window.open(url, "_blank");
+      toastInfo(`Öffne "${chapter}" im Browser...`);
     }
   }
 
@@ -116,8 +124,22 @@
     try {
       const { open } = await import("@tauri-apps/plugin-shell");
       await open(url);
+      toastInfo("Öffne AMBOSS-Kreuzsitzung...");
     } catch {
       window.open(url, "_blank");
+      toastInfo("Öffne AMBOSS-Kreuzsitzung im Browser...");
+    }
+  }
+
+  async function openAmbossProbeklausur() {
+    const url = "https://next.amboss.com/de/exams";
+    try {
+      const { open } = await import("@tauri-apps/plugin-shell");
+      await open(url);
+      toastInfo("Öffne AMBOSS-Probeklausuren...");
+    } catch {
+      window.open(url, "_blank");
+      toastInfo("Öffne AMBOSS-Probeklausuren im Browser...");
     }
   }
 
@@ -453,17 +475,32 @@
                   {/if}
                 </div>
               {:else}
-                <p class="text-sm text-text-muted mt-1">
-                  {#if sel.phase === "vacation-june" || sel.phase === "vacation-sept"}
-                    Urlaub &ndash; Nur Anki ({sel.ankiTarget} Karten)
-                  {:else if sel.phase === "exam-prep"}
-                    AMBOSS Probeklausuren &ndash; Anki: {sel.ankiTarget}
-                  {:else if sel.phase === "weekend"}
-                    Wochenende &ndash; Leichtes Anki ({sel.ankiTarget} Karten)
-                  {:else}
-                    Kein AMBOSS-Tag zugewiesen
-                  {/if}
-                </p>
+                {#if sel.phase === "exam-prep"}
+                  <p class="text-sm text-text-secondary mt-1">
+                    Nur AMBOSS-Probeklausuren &ndash; keine Wiederholungen oder neuen Themen.
+                  </p>
+                  <div class="flex flex-wrap gap-2 mt-2">
+                    <button
+                      onclick={openAmbossProbeklausur}
+                      class="rounded-md bg-red-500/15 px-3 py-1 text-xs font-medium text-red-400 hover:bg-red-500/25 transition-colors cursor-pointer"
+                    >
+                      📝 AMBOSS-Probeklausur starten
+                    </button>
+                    <span class="rounded-md bg-bg-primary px-2 py-0.5 text-xs text-text-secondary">
+                      Anki: {sel.ankiTarget} (leicht)
+                    </span>
+                  </div>
+                {:else}
+                  <p class="text-sm text-text-muted mt-1">
+                    {#if sel.phase === "vacation-june" || sel.phase === "vacation-sept"}
+                      Urlaub &ndash; Nur Anki ({sel.ankiTarget} Karten)
+                    {:else if sel.phase === "weekend"}
+                      Wochenende &ndash; Leichtes Anki ({sel.ankiTarget} Karten)
+                    {:else}
+                      Kein AMBOSS-Tag zugewiesen
+                    {/if}
+                  </p>
+                {/if}
               {/if}
             </div>
             <button

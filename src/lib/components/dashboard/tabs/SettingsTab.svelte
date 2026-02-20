@@ -209,9 +209,10 @@
           class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
       </div>
       <div>
-        <label for="examDate" class="text-xs font-medium text-text-muted mb-1.5 block">Examstermin</label>
+        <label for="examDate" class="text-xs font-medium text-text-muted mb-1.5 block">Erster Klausurtag</label>
         <input id="examDate" type="date" bind:value={examDate}
           class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
+        <p class="text-[10px] text-text-muted mt-1">M2 2026: 6.–8. Oktober</p>
       </div>
       <div>
         <label for="semesterEnd" class="text-xs font-medium text-text-muted mb-1.5 block">Semesterende</label>
@@ -296,7 +297,7 @@
       </label>
     </div>
     <p class="mt-3 text-xs text-text-muted">
-      Die letzten 14 Tage vor dem Examen sind automatisch für AMBOSS-Probeklausuren reserviert (keine regulären Lerntage).
+      Die letzten 14 Tage vor dem ersten Klausurtag sind automatisch für AMBOSS-Probeklausuren reserviert. Keine neuen Themen, keine Wiederholungen — nur Probeklausuren und leichtes Anki.
     </p>
   </div>
 

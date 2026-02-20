@@ -7,6 +7,7 @@
   import StatsTab from "./tabs/StatsTab.svelte";
   import SettingsTab from "./tabs/SettingsTab.svelte";
   import UpdateChecker from "./UpdateChecker.svelte";
+  import Toast from "./Toast.svelte";
   import { loadSettings, getSettings } from "$lib/stores/settingsStore.svelte";
   import { loadAmbossDays, loadCalendarDays, setCalendarDays, isPlanGenerated, importAmbossPlan } from "$lib/stores/planStore.svelte";
   import { startPolling } from "$lib/stores/ankiStore.svelte";
@@ -134,4 +135,6 @@
       <SettingsTab />
     {/if}
   </main>
+
+  <Toast />
 </div>

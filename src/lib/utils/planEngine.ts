@@ -179,7 +179,7 @@ export function getPhaseForDate(date: Date, config: PlanConfig): Phase {
 export function getDefaultConfig(): PlanConfig {
   return {
     startDate: '2026-04-06',
-    examDate: '2026-10-14',
+    examDate: '2026-10-06',
     semesterEndDate: '2026-07-20',
     juneVacation: { start: '2026-06-01', end: '2026-06-14' },
     septVacation: { start: '2026-09-07', end: '2026-09-13' },

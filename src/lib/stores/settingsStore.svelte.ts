@@ -25,7 +25,7 @@ export interface Settings {
 
 const defaultSettings: Settings = {
   planStartDate: "2026-04-06",
-  examDate: "2026-10-14",
+  examDate: "2026-10-06",
   semesterEndDate: "2026-07-20",
   juneVacationStart: "2026-06-01",
   juneVacationEnd: "2026-06-14",
@@ -42,7 +42,7 @@ const defaultSettings: Settings = {
   notificationEnabled: true,
   notificationMorningTime: "08:00",
   notificationEveningTime: "20:00",
-  theme: "dark",
+  theme: "light",
   widgetMode: "normal",
 };
 

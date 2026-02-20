@@ -140,13 +140,21 @@
 
   // --- AMBOSS link helpers ---
 
+  import { toastInfo, toastWarning } from "$lib/stores/toastStore.svelte";
+
   async function openAmbossChapter(chapter: string) {
+    if (!chapter) {
+      toastWarning("Kein Kapitel verknüpft. Öffne AMBOSS manuell und suche das Thema.");
+      return;
+    }
     const url = `https://next.amboss.com/de/search?q=${encodeURIComponent(chapter)}`;
     try {
       const { open } = await import("@tauri-apps/plugin-shell");
       await open(url);
+      toastInfo(`Öffne "${chapter}" in AMBOSS...`);
     } catch {
       window.open(url, "_blank");
+      toastInfo(`Öffne "${chapter}" im Browser...`);
     }
   }
 
@@ -155,8 +163,22 @@
     try {
       const { open } = await import("@tauri-apps/plugin-shell");
       await open(url);
+      toastInfo("Öffne AMBOSS-Kreuzsitzung...");
     } catch {
       window.open(url, "_blank");
+      toastInfo("Öffne AMBOSS-Kreuzsitzung im Browser...");
+    }
+  }
+
+  async function openAmbossProbeklausur() {
+    const url = "https://next.amboss.com/de/exams";
+    try {
+      const { open } = await import("@tauri-apps/plugin-shell");
+      await open(url);
+      toastInfo("Öffne AMBOSS-Probeklausuren...");
+    } catch {
+      window.open(url, "_blank");
+      toastInfo("Öffne AMBOSS-Probeklausuren im Browser...");
     }
   }
 </script>
@@ -191,23 +213,41 @@
       </p>
     </div>
 
-    <div class="rounded-xl bg-bg-secondary border border-border p-6 text-center">
-      <div class="text-3xl mb-3">
-        {#if todayCalDay?.phase === "exam-prep"}
-          📝
-        {:else if todayCalDay?.phase === "weekend"}
-          ☀️
-        {:else}
-          🏖️
-        {/if}
+    {#if todayCalDay?.phase === "exam-prep"}
+      <!-- Exam prep: Probeklausuren only -->
+      <div class="rounded-xl bg-red-500/10 border border-red-500/20 p-6">
+        <div class="text-center mb-4">
+          <div class="text-3xl mb-2">📝</div>
+          <h3 class="text-lg font-semibold text-text-primary">Probeklausuren-Phase</h3>
+          <p class="text-sm text-text-secondary mt-1">
+            Nur AMBOSS-Probeklausuren. Keine neuen Themen, keine Wiederholungen.
+          </p>
+        </div>
+
+        <button
+          onclick={openAmbossProbeklausur}
+          class="w-full rounded-lg bg-red-500/15 border border-red-500/30 px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-500/25 transition-colors cursor-pointer group"
+        >
+          <div class="flex items-center justify-center gap-2">
+            📝 AMBOSS-Probeklausur starten
+            <svg class="w-4 h-4 text-red-400/60 group-hover:text-red-400 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </div>
+          <p class="text-xs text-red-400/60 mt-1">Öffnet AMBOSS-Examen im Browser</p>
+        </button>
       </div>
-      <h3 class="text-lg font-semibold text-text-primary mb-1">{planStatus.message}</h3>
-      {#if todayCalDay?.phase === "exam-prep"}
-        <p class="text-sm text-text-secondary">Fokussiere dich auf Probeklausuren und Wiederholung.</p>
-      {:else}
+    {:else}
+      <div class="rounded-xl bg-bg-secondary border border-border p-6 text-center">
+        <div class="text-3xl mb-3">
+          {#if todayCalDay?.phase === "weekend"}
+            ☀️
+          {:else}
+            🏖️
+          {/if}
+        </div>
+        <h3 class="text-lg font-semibold text-text-primary mb-1">{planStatus.message}</h3>
         <p class="text-sm text-text-secondary">Kein neues AMBOSS-Thema heute. Vergiss nicht deine Anki-Karten!</p>
-      {/if}
-    </div>
+      </div>
+    {/if}
 
     <!-- Anki & Streak on free days -->
     <div class="grid grid-cols-3 gap-4">
@@ -313,10 +353,13 @@
         <!-- Reading Card -->
         <button
           onclick={() => openAmbossChapter(todayAmboss!.chapters[0] ?? todayAmboss!.subject)}
-          class="rounded-xl bg-bg-secondary border border-border p-4 text-left transition-colors hover:border-accent/40 cursor-pointer"
+          class="rounded-xl bg-bg-secondary border border-border p-4 text-left transition-colors hover:border-accent/40 cursor-pointer group"
         >
           <div class="flex items-center justify-between">
-            <h4 class="text-sm font-medium text-text-primary">Kapitel lesen</h4>
+            <h4 class="text-sm font-medium text-text-primary flex items-center gap-1.5">
+              Kapitel lesen
+              <svg class="w-3.5 h-3.5 text-text-muted group-hover:text-accent transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </h4>
             <label class="cursor-pointer" onclick={(e: MouseEvent) => e.stopPropagation()}>
               <input
                 type="checkbox"
@@ -327,17 +370,20 @@
             </label>
           </div>
           <p class="mt-2 text-xs text-text-muted">
-            {readingDone ? "Erledigt!" : "AMBOSS-Kapitel durcharbeiten"}
+            {readingDone ? "Erledigt!" : "Klicken → AMBOSS-Kapitel öffnen"}
           </p>
         </button>
 
         <!-- Kreuzen Card -->
         <button
           onclick={openAmbossKreuzen}
-          class="rounded-xl bg-bg-secondary border border-border p-4 text-left transition-colors hover:border-accent/40 cursor-pointer"
+          class="rounded-xl bg-bg-secondary border border-border p-4 text-left transition-colors hover:border-accent/40 cursor-pointer group"
         >
           <div class="flex items-center justify-between">
-            <h4 class="text-sm font-medium text-text-primary">{todayAmboss.question_count} Fragen kreuzen</h4>
+            <h4 class="text-sm font-medium text-text-primary flex items-center gap-1.5">
+              {todayAmboss.question_count} Fragen kreuzen
+              <svg class="w-3.5 h-3.5 text-text-muted group-hover:text-accent transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </h4>
             <label class="cursor-pointer" onclick={(e: MouseEvent) => e.stopPropagation()}>
               <input
                 type="checkbox"
@@ -353,7 +399,7 @@
             </p>
           {:else}
             <p class="mt-2 text-xs text-text-muted">
-              {kreuzenDone ? "Erledigt!" : "AMBOSS-Kreuzsitzung starten"}
+              {kreuzenDone ? "Erledigt!" : "Klicken → AMBOSS-Kreuzsitzung öffnen"}
             </p>
           {/if}
         </button>
