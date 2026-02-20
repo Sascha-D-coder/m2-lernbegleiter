@@ -7,7 +7,8 @@
   let loaded = $derived(isLoaded());
   let settings = $derived(getSettings());
 
-  // Local form values - initialized from settings
+  // Local form values
+  let planStartDate = $state("");
   let examDate = $state("");
   let semesterEnd = $state("");
   let juneVacStart = $state("");
@@ -24,6 +25,7 @@
   let notificationEnabled = $state(true);
   let morningTime = $state("08:00");
   let eveningTime = $state("20:00");
+  let theme = $state("light");
 
   let saving = $state(false);
   let saved = $state(false);
@@ -33,6 +35,7 @@
   $effect(() => {
     if (loaded) {
       const s = settings;
+      planStartDate = s.planStartDate;
       examDate = s.examDate;
       semesterEnd = s.semesterEndDate;
       juneVacStart = s.juneVacationStart;
@@ -49,13 +52,62 @@
       notificationEnabled = s.notificationEnabled;
       morningTime = s.notificationMorningTime;
       eveningTime = s.notificationEveningTime;
+      theme = s.theme;
     }
+  });
+
+  // Validation warnings
+  let planWarnings = $derived.by(() => {
+    const warnings: string[] = [];
+    if (!planStartDate || !examDate) return warnings;
+
+    const start = new Date(planStartDate);
+    const exam = new Date(examDate);
+    const now = new Date();
+    now.setHours(0,0,0,0);
+
+    const totalDays = Math.round((exam.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (totalDays < 60) {
+      warnings.push(`Nur ${totalDays} Tage Lernzeit. Das ist sehr knapp für 88 AMBOSS-Lerntage.`);
+    } else if (totalDays < 100) {
+      warnings.push(`${totalDays} Tage Lernzeit. Ambitioniert, aber machbar bei Vollzeit-Lernen.`);
+    }
+
+    if (start.getTime() < now.getTime()) {
+      const daysPast = Math.round((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      warnings.push(`Startdatum liegt ${daysPast} Tage in der Vergangenheit.`);
+    }
+
+    if (exam.getTime() <= start.getTime()) {
+      warnings.push("Examstermin muss nach dem Startdatum liegen.");
+    }
+
+    if (semesterEnd) {
+      const semEnd = new Date(semesterEnd);
+      if (semEnd.getTime() <= start.getTime()) {
+        warnings.push("Semesterende sollte nach dem Startdatum liegen.");
+      }
+    }
+
+    return warnings;
+  });
+
+  function applyTheme(t: string) {
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("data-theme", t);
+    }
+  }
+
+  $effect(() => {
+    applyTheme(theme);
   });
 
   async function handleSave() {
     saving = true;
     saved = false;
     await saveSettings({
+      planStartDate,
       examDate,
       semesterEndDate: semesterEnd,
       juneVacationStart: juneVacStart,
@@ -72,6 +124,7 @@
       notificationEnabled,
       notificationMorningTime: morningTime,
       notificationEveningTime: eveningTime,
+      theme,
     });
     saving = false;
     saved = true;
@@ -89,6 +142,7 @@
         ambossDays = days;
       }
       const calendar = buildStudyPlan(ambossDays, {
+        startDate: planStartDate,
         examDate,
         semesterEndDate: semesterEnd,
         juneVacation: { start: juneVacStart, end: juneVacEnd },
@@ -112,21 +166,62 @@
     <p class="text-sm text-text-secondary">Lernplan-Konfiguration und Präferenzen</p>
   </div>
 
+  <!-- Design -->
+  <div class="rounded-xl bg-bg-secondary border border-border p-5">
+    <h3 class="text-base font-semibold text-text-primary mb-4">Darstellung</h3>
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-sm text-text-secondary">Farbmodus</div>
+        <div class="text-xs text-text-muted mt-0.5">Hell für den Tag, Dunkel für die Nacht</div>
+      </div>
+      <div class="flex rounded-lg border border-border overflow-hidden">
+        <button
+          onclick={() => theme = "light"}
+          class="px-3 py-1.5 text-xs font-medium transition-colors {theme === 'light' ? 'bg-accent text-white' : 'bg-bg-primary text-text-secondary hover:text-text-primary'}"
+        >
+          Hell
+        </button>
+        <button
+          onclick={() => theme = "dark"}
+          class="px-3 py-1.5 text-xs font-medium transition-colors {theme === 'dark' ? 'bg-accent text-white' : 'bg-bg-primary text-text-secondary hover:text-text-primary'}"
+        >
+          Dunkel
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Termine -->
   <div class="rounded-xl bg-bg-secondary border border-border p-5">
     <h3 class="text-base font-semibold text-text-primary mb-4">Termine</h3>
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid grid-cols-3 gap-4">
       <div>
-        <label class="text-xs font-medium text-text-muted mb-1.5 block">Examstermin</label>
-        <input type="date" bind:value={examDate}
-          class="w-full rounded-lg bg-white/5 border border-border px-3 py-2 text-sm text-text-primary" />
+        <label for="planStart" class="text-xs font-medium text-text-muted mb-1.5 block">Plan-Start</label>
+        <input id="planStart" type="date" bind:value={planStartDate}
+          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
       </div>
       <div>
-        <label class="text-xs font-medium text-text-muted mb-1.5 block">Semesterende</label>
-        <input type="date" bind:value={semesterEnd}
-          class="w-full rounded-lg bg-white/5 border border-border px-3 py-2 text-sm text-text-primary" />
+        <label for="examDate" class="text-xs font-medium text-text-muted mb-1.5 block">Examstermin</label>
+        <input id="examDate" type="date" bind:value={examDate}
+          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
+      </div>
+      <div>
+        <label for="semesterEnd" class="text-xs font-medium text-text-muted mb-1.5 block">Semesterende</label>
+        <input id="semesterEnd" type="date" bind:value={semesterEnd}
+          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
       </div>
     </div>
+
+    {#if planWarnings.length > 0}
+      <div class="mt-3 space-y-1.5">
+        {#each planWarnings as warning}
+          <div class="flex items-start gap-2 rounded-lg bg-warning/10 border border-warning/20 px-3 py-2">
+            <span class="text-warning text-sm shrink-0">&#9888;</span>
+            <span class="text-xs text-text-secondary">{warning}</span>
+          </div>
+        {/each}
+      </div>
+    {/if}
   </div>
 
   <!-- Urlaub -->
@@ -134,24 +229,24 @@
     <h3 class="text-base font-semibold text-text-primary mb-4">Urlaub</h3>
     <div class="grid grid-cols-2 gap-4">
       <div>
-        <label class="text-xs font-medium text-text-muted mb-1.5 block">Juni-Urlaub Start</label>
-        <input type="date" bind:value={juneVacStart}
-          class="w-full rounded-lg bg-white/5 border border-border px-3 py-2 text-sm text-text-primary" />
+        <label for="juneStart" class="text-xs font-medium text-text-muted mb-1.5 block">Juni-Urlaub Start</label>
+        <input id="juneStart" type="date" bind:value={juneVacStart}
+          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
       </div>
       <div>
-        <label class="text-xs font-medium text-text-muted mb-1.5 block">Juni-Urlaub Ende</label>
-        <input type="date" bind:value={juneVacEnd}
-          class="w-full rounded-lg bg-white/5 border border-border px-3 py-2 text-sm text-text-primary" />
+        <label for="juneEnd" class="text-xs font-medium text-text-muted mb-1.5 block">Juni-Urlaub Ende</label>
+        <input id="juneEnd" type="date" bind:value={juneVacEnd}
+          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
       </div>
       <div>
-        <label class="text-xs font-medium text-text-muted mb-1.5 block">September-Urlaub Start</label>
-        <input type="date" bind:value={septVacStart}
-          class="w-full rounded-lg bg-white/5 border border-border px-3 py-2 text-sm text-text-primary" />
+        <label for="septStart" class="text-xs font-medium text-text-muted mb-1.5 block">September-Urlaub Start</label>
+        <input id="septStart" type="date" bind:value={septVacStart}
+          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
       </div>
       <div>
-        <label class="text-xs font-medium text-text-muted mb-1.5 block">September-Urlaub Ende</label>
-        <input type="date" bind:value={septVacEnd}
-          class="w-full rounded-lg bg-white/5 border border-border px-3 py-2 text-sm text-text-primary" />
+        <label for="septEnd" class="text-xs font-medium text-text-muted mb-1.5 block">September-Urlaub Ende</label>
+        <input id="septEnd" type="date" bind:value={septVacEnd}
+          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
       </div>
     </div>
   </div>
@@ -161,17 +256,17 @@
     <h3 class="text-base font-semibold text-text-primary mb-4">Lernzeit</h3>
     <div class="grid grid-cols-2 gap-4">
       <div>
-        <label class="text-xs font-medium text-text-muted mb-1.5 block">
+        <label for="semHours" class="text-xs font-medium text-text-muted mb-1.5 block">
           Stunden/Tag (Semester): {semesterHours}h
         </label>
-        <input type="range" min="1" max="4" step="0.5" bind:value={semesterHours}
+        <input id="semHours" type="range" min="1" max="4" step="0.5" bind:value={semesterHours}
           class="w-full accent-accent" />
       </div>
       <div>
-        <label class="text-xs font-medium text-text-muted mb-1.5 block">
+        <label for="ftHours" class="text-xs font-medium text-text-muted mb-1.5 block">
           Stunden/Tag (Vollzeit): {fulltimeHours}h
         </label>
-        <input type="range" min="4" max="10" step="0.5" bind:value={fulltimeHours}
+        <input id="ftHours" type="range" min="4" max="10" step="0.5" bind:value={fulltimeHours}
           class="w-full accent-accent" />
       </div>
     </div>
@@ -192,6 +287,9 @@
           class="h-5 w-5 rounded accent-accent" />
       </label>
     </div>
+    <p class="mt-3 text-xs text-text-muted">
+      Die letzten 14 Tage vor dem Examen sind automatisch für AMBOSS-Probeklausuren reserviert (keine regulären Lerntage).
+    </p>
   </div>
 
   <!-- KI-Einstellungen -->
@@ -200,9 +298,9 @@
     <p class="text-xs text-text-muted mb-4">Konfiguration für Retain-Tests und KI-gestützte Lernhilfen</p>
     <div class="space-y-4">
       <div>
-        <label class="text-xs font-medium text-text-muted mb-1.5 block">LLM Provider</label>
-        <select bind:value={llmProvider}
-          class="w-full rounded-lg bg-white/5 border border-border px-3 py-2 text-sm text-text-primary">
+        <label for="llmProvider" class="text-xs font-medium text-text-muted mb-1.5 block">LLM Provider</label>
+        <select id="llmProvider" bind:value={llmProvider}
+          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary">
           <option value="claude">Claude API</option>
           <option value="ollama">Ollama (Lokal)</option>
         </select>
@@ -210,16 +308,32 @@
 
       {#if llmProvider === "claude"}
         <div>
-          <label class="text-xs font-medium text-text-muted mb-1.5 block">API Key</label>
-          <input type="password" bind:value={llmApiKey} placeholder="sk-ant-..."
-            class="w-full rounded-lg bg-white/5 border border-border px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/40" />
+          <label for="apiKey" class="text-xs font-medium text-text-muted mb-1.5 block">API Key</label>
+          <input id="apiKey" type="password" bind:value={llmApiKey} placeholder="sk-ant-..."
+            class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/40" />
+        </div>
+
+        <!-- API Key Explanation -->
+        <div class="rounded-lg bg-accent/5 border border-accent/15 p-3">
+          <h4 class="text-xs font-semibold text-accent mb-2">So erstellst du einen Claude API Key:</h4>
+          <ol class="text-xs text-text-secondary space-y-1.5 list-decimal list-inside">
+            <li>Gehe zu <span class="font-medium text-accent">console.anthropic.com</span></li>
+            <li>Erstelle ein Konto oder logge dich ein</li>
+            <li>Navigiere zu <span class="font-medium">API Keys</span> im Dashboard</li>
+            <li>Klicke auf <span class="font-medium">"Create Key"</span></li>
+            <li>Kopiere den Key (beginnt mit <code class="bg-bg-primary px-1 py-0.5 rounded text-[11px]">sk-ant-...</code>)</li>
+            <li>Füge ihn oben ein</li>
+          </ol>
+          <p class="text-[10px] text-text-muted mt-2">
+            Kosten: ca. $0.01-0.05 pro Retain-Test (10 Fragen). Ein neues Konto bekommt $5 Guthaben gratis.
+          </p>
         </div>
       {/if}
 
       <div>
-        <label class="text-xs font-medium text-text-muted mb-1.5 block">Modell</label>
-        <select bind:value={llmModel}
-          class="w-full rounded-lg bg-white/5 border border-border px-3 py-2 text-sm text-text-primary">
+        <label for="llmModel" class="text-xs font-medium text-text-muted mb-1.5 block">Modell</label>
+        <select id="llmModel" bind:value={llmModel}
+          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary">
           {#if llmProvider === "claude"}
             <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5</option>
             <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
@@ -246,14 +360,14 @@
       {#if notificationEnabled}
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="text-xs font-medium text-text-muted mb-1.5 block">Morgens</label>
-            <input type="time" bind:value={morningTime}
-              class="w-full rounded-lg bg-white/5 border border-border px-3 py-2 text-sm text-text-primary" />
+            <label for="morningTime" class="text-xs font-medium text-text-muted mb-1.5 block">Morgens</label>
+            <input id="morningTime" type="time" bind:value={morningTime}
+              class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
           </div>
           <div>
-            <label class="text-xs font-medium text-text-muted mb-1.5 block">Abends</label>
-            <input type="time" bind:value={eveningTime}
-              class="w-full rounded-lg bg-white/5 border border-border px-3 py-2 text-sm text-text-primary" />
+            <label for="eveningTime" class="text-xs font-medium text-text-muted mb-1.5 block">Abends</label>
+            <input id="eveningTime" type="time" bind:value={eveningTime}
+              class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
           </div>
         </div>
       {/if}
@@ -285,7 +399,7 @@
     <button
       onclick={regeneratePlan}
       disabled={regenerating}
-      class="rounded-lg bg-white/5 border border-border px-6 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-white/10 disabled:opacity-50"
+      class="rounded-lg border border-border bg-bg-primary px-6 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-border/30 disabled:opacity-50"
     >
       {#if regenerating}
         <span class="inline-flex items-center gap-2">

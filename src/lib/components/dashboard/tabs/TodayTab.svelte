@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getTodayCalendarDay, getTodayAmbossDay, getProgressPercent, getCurrentDayNumber, getTotalStudyDays, getCalendarDays } from "$lib/stores/planStore.svelte";
+  import { getTodayCalendarDay, getTodayAmbossDay, getProgressPercent, getCurrentDayNumber, getTotalStudyDays, getCalendarDays, isPlanGenerated } from "$lib/stores/planStore.svelte";
   import { getCardsDueCount_, isConnected as isAnkiConnected } from "$lib/stores/ankiStore.svelte";
   import { getDb } from "$lib/api/db";
   import { formatDateLong } from "$lib/utils/dateUtils";
@@ -11,6 +11,38 @@
   let totalDays = $derived(getTotalStudyDays());
   let progressPercent = $derived(getProgressPercent());
   let ankiDue = $derived(getCardsDueCount_());
+  let planReady = $derived(isPlanGenerated());
+  let calendarDays = $derived(getCalendarDays());
+
+  // Determine the plan status (mirrors Widget.svelte logic)
+  let planStatus = $derived.by(() => {
+    if (!planReady) return { type: "no-plan" as const };
+
+    const todayStr = new Date().toISOString().split("T")[0];
+
+    if (todayCalDay) {
+      if (todayAmboss) {
+        return { type: "study-day" as const };
+      }
+      const phase = todayCalDay.phase;
+      if (phase === "weekend") return { type: "free-day" as const, message: "Wochenende - nur Anki" };
+      if (phase === "vacation-june" || phase === "vacation-sept") return { type: "free-day" as const, message: "Urlaub - nur Anki" };
+      if (phase === "exam-prep") return { type: "free-day" as const, message: "Probeklausuren-Phase" };
+      return { type: "free-day" as const, message: "Heute frei" };
+    }
+
+    if (calendarDays.length > 0) {
+      const firstDate = calendarDays[0].date;
+      if (todayStr < firstDate) {
+        const d = new Date(firstDate + "T00:00:00");
+        const formatted = d.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
+        return { type: "not-started" as const, message: `Dein Plan startet am ${formatted}` };
+      }
+      return { type: "free-day" as const, message: "Plan abgeschlossen" };
+    }
+
+    return { type: "no-plan" as const };
+  });
 
   // Local progress state
   let readingDone = $state(false);
@@ -105,10 +137,32 @@
     if (total === 0) return "\u2013";
     return Math.round((correct / total) * 100) + "%";
   }
+
+  // --- AMBOSS link helpers ---
+
+  async function openAmbossChapter(chapter: string) {
+    const url = `https://next.amboss.com/de/search?q=${encodeURIComponent(chapter)}`;
+    try {
+      const { open } = await import("@tauri-apps/plugin-shell");
+      await open(url);
+    } catch {
+      window.open(url, "_blank");
+    }
+  }
+
+  async function openAmbossKreuzen() {
+    const url = "https://next.amboss.com/de/questions";
+    try {
+      const { open } = await import("@tauri-apps/plugin-shell");
+      await open(url);
+    } catch {
+      window.open(url, "_blank");
+    }
+  }
 </script>
 
 <div class="space-y-6">
-  {#if !todayAmboss}
+  {#if planStatus.type === "no-plan"}
     <!-- No plan generated yet -->
     <div class="rounded-xl bg-bg-secondary border border-border p-8 text-center">
       <div class="text-4xl mb-4">📋</div>
@@ -117,7 +171,63 @@
         Du hast noch keinen Lernplan erstellt. Gehe zum <span class="font-medium text-accent">Plan</span>-Tab, um deinen Studienplan zu generieren.
       </p>
     </div>
+
+  {:else if planStatus.type === "not-started"}
+    <!-- Plan exists but hasn't started yet -->
+    <div class="rounded-xl bg-bg-secondary border border-border p-8 text-center">
+      <div class="text-4xl mb-4">📅</div>
+      <h2 class="text-xl font-bold text-text-primary mb-2">{planStatus.message}</h2>
+      <p class="text-sm text-text-secondary mb-4">
+        Dein Lernplan ist erstellt. Nutze die Zeit bis dahin, um dich vorzubereiten.
+      </p>
+    </div>
+
+  {:else if planStatus.type === "free-day"}
+    <!-- Free day (weekend, vacation, exam-prep) -->
+    <div>
+      <h2 class="text-2xl font-bold text-text-primary">Heute</h2>
+      <p class="text-sm text-text-secondary">
+        {formatDateLong(new Date())}
+      </p>
+    </div>
+
+    <div class="rounded-xl bg-bg-secondary border border-border p-6 text-center">
+      <div class="text-3xl mb-3">
+        {#if todayCalDay?.phase === "exam-prep"}
+          📝
+        {:else if todayCalDay?.phase === "weekend"}
+          ☀️
+        {:else}
+          🏖️
+        {/if}
+      </div>
+      <h3 class="text-lg font-semibold text-text-primary mb-1">{planStatus.message}</h3>
+      {#if todayCalDay?.phase === "exam-prep"}
+        <p class="text-sm text-text-secondary">Fokussiere dich auf Probeklausuren und Wiederholung.</p>
+      {:else}
+        <p class="text-sm text-text-secondary">Kein neues AMBOSS-Thema heute. Vergiss nicht deine Anki-Karten!</p>
+      {/if}
+    </div>
+
+    <!-- Anki & Streak on free days -->
+    <div class="grid grid-cols-3 gap-4">
+      <div class="rounded-xl bg-bg-secondary border border-border p-4 text-center">
+        <div class="text-2xl font-bold text-text-primary">{ankiDue}</div>
+        <div class="text-xs text-text-muted">Anki-Karten fällig</div>
+      </div>
+      <div class="rounded-xl bg-bg-secondary border border-border p-4 text-center">
+        <div class="text-2xl font-bold text-text-primary">{streak}</div>
+        <div class="text-xs text-text-muted">Tage Streak</div>
+      </div>
+      <div class="rounded-xl bg-bg-secondary border border-border p-4 text-center">
+        <div class="text-2xl font-bold text-accent">{progressPercent}%</div>
+        <div class="text-xs text-text-muted">Gesamtfortschritt</div>
+      </div>
+    </div>
+
   {:else}
+    <!-- study-day: Normal study day with AMBOSS content -->
+
     <!-- Header -->
     <div>
       <h2 class="text-2xl font-bold text-text-primary">Heute</h2>
@@ -128,111 +238,127 @@
     </div>
 
     <!-- Subject Hero -->
-    <div class="rounded-xl bg-bg-secondary border border-border p-5">
-      <div class="flex items-start justify-between">
-        <div>
-          <div class="text-xs font-medium uppercase tracking-wider text-accent">
-            Heutiges Thema
-          </div>
-          <h3 class="mt-1 text-xl font-semibold text-text-primary">{todayAmboss.subject}</h3>
-          <p class="text-sm text-text-secondary">{todayAmboss.sub_topic}</p>
-        </div>
-        <div class="text-right">
-          <div class="text-2xl font-bold text-accent">{progressPercent}%</div>
-          <div class="text-xs text-text-muted">Gesamtfortschritt</div>
-        </div>
-      </div>
-
-      {#if todayAmboss.chapters.length > 0}
-        <div class="mt-4">
-          <div class="text-xs font-medium text-text-muted mb-2">Kapitel:</div>
-          <div class="flex flex-wrap gap-2">
-            {#each todayAmboss.chapters as chapter}
-              <span class="rounded-md bg-white/5 px-2.5 py-1 text-xs text-text-secondary">
-                {chapter}
+    {#if todayAmboss}
+      <div class="rounded-xl bg-bg-secondary border border-border p-5">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-2">
+              <div class="text-xs font-medium uppercase tracking-wider text-accent">
+                Heutiges Thema
+              </div>
+              <span class="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium text-accent">
+                AMBOSS Tag {todayAmboss.day_number}
               </span>
-            {/each}
+            </div>
+            <h3 class="mt-1 text-xl font-semibold text-text-primary">{todayAmboss.subject}</h3>
+            <p class="text-sm text-text-secondary">{todayAmboss.sub_topic}</p>
+          </div>
+          <div class="text-right">
+            <div class="text-2xl font-bold text-accent">{progressPercent}%</div>
+            <div class="text-xs text-text-muted">Gesamtfortschritt</div>
           </div>
         </div>
-      {/if}
 
-      <!-- Split info -->
-      {#if todayCalDay?.splitPart === 'reading'}
-        <div class="mt-3">
-          <span class="inline-block rounded-md bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
-            Heute: Kapitel lesen
-          </span>
-        </div>
-      {:else if todayCalDay?.splitPart === 'kreuzen'}
-        <div class="mt-3">
-          <span class="inline-block rounded-md bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
-            Heute: Fragen kreuzen
-          </span>
-        </div>
-      {:else if todayCalDay?.splitPart === 'both'}
-        <div class="mt-3 flex gap-2">
-          <span class="inline-block rounded-md bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
-            Kapitel lesen
-          </span>
-          <span class="inline-block rounded-md bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
-            Fragen kreuzen
-          </span>
-        </div>
-      {/if}
+        {#if todayAmboss.chapters.length > 0}
+          <div class="mt-4">
+            <div class="text-xs font-medium text-text-muted mb-2">Kapitel:</div>
+            <div class="flex flex-wrap gap-2">
+              {#each todayAmboss.chapters as chapter}
+                <button
+                  onclick={() => openAmbossChapter(chapter)}
+                  class="rounded-md bg-bg-primary/50 border border-border/50 px-2.5 py-1 text-xs text-text-secondary hover:text-accent hover:border-accent/40 transition-colors cursor-pointer"
+                >
+                  {chapter}
+                </button>
+              {/each}
+            </div>
+          </div>
+        {/if}
 
-      {#if todayCalDay?.retainTestScheduled}
-        <div class="mt-2">
-          <span class="inline-block rounded-md bg-warning/15 px-2.5 py-1 text-xs font-medium text-warning">
-            Retain-Test geplant
-          </span>
-        </div>
-      {/if}
-    </div>
+        <!-- Split info -->
+        {#if todayCalDay?.splitPart === 'reading'}
+          <div class="mt-3">
+            <span class="inline-block rounded-md bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
+              Heute: Kapitel lesen
+            </span>
+          </div>
+        {:else if todayCalDay?.splitPart === 'kreuzen'}
+          <div class="mt-3">
+            <span class="inline-block rounded-md bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
+              Heute: Fragen kreuzen
+            </span>
+          </div>
+        {:else if todayCalDay?.splitPart === 'both'}
+          <div class="mt-3 flex gap-2">
+            <span class="inline-block rounded-md bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
+              Kapitel lesen
+            </span>
+            <span class="inline-block rounded-md bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
+              Fragen kreuzen
+            </span>
+          </div>
+        {/if}
 
-    <!-- Task Cards -->
-    <div class="grid grid-cols-2 gap-4">
-      <!-- Reading Card -->
-      <div class="rounded-xl bg-bg-secondary border border-border p-4">
-        <div class="flex items-center justify-between">
-          <h4 class="text-sm font-medium text-text-primary">Kapitel lesen</h4>
-          <label class="cursor-pointer">
-            <input
-              type="checkbox"
-              checked={readingDone}
-              onchange={toggleReading}
-              class="h-5 w-5 rounded border-text-muted accent-accent"
-            />
-          </label>
-        </div>
-        <p class="mt-2 text-xs text-text-muted">
-          {readingDone ? "Erledigt!" : "AMBOSS-Kapitel durcharbeiten"}
-        </p>
-      </div>
-
-      <!-- Kreuzen Card -->
-      <div class="rounded-xl bg-bg-secondary border border-border p-4">
-        <div class="flex items-center justify-between">
-          <h4 class="text-sm font-medium text-text-primary">{todayAmboss.question_count} Fragen kreuzen</h4>
-          <label class="cursor-pointer">
-            <input
-              type="checkbox"
-              checked={kreuzenDone}
-              onchange={toggleKreuzen}
-              class="h-5 w-5 rounded border-text-muted accent-accent"
-            />
-          </label>
-        </div>
-        {#if kreuzenTotal > 0}
-          <p class="mt-2 text-xs text-text-secondary">
-            {kreuzenCorrect}/{kreuzenTotal} richtig ({formatPercent(kreuzenCorrect, kreuzenTotal)})
-          </p>
-        {:else}
-          <p class="mt-2 text-xs text-text-muted">
-            {kreuzenDone ? "Erledigt!" : "AMBOSS-Kreuzsitzung starten"}
-          </p>
+        {#if todayCalDay?.retainTestScheduled}
+          <div class="mt-2">
+            <span class="inline-block rounded-md bg-warning/15 px-2.5 py-1 text-xs font-medium text-warning">
+              Retain-Test geplant
+            </span>
+          </div>
         {/if}
       </div>
-    </div>
+
+      <!-- Task Cards -->
+      <div class="grid grid-cols-2 gap-4">
+        <!-- Reading Card -->
+        <button
+          onclick={() => openAmbossChapter(todayAmboss!.chapters[0] ?? todayAmboss!.subject)}
+          class="rounded-xl bg-bg-secondary border border-border p-4 text-left transition-colors hover:border-accent/40 cursor-pointer"
+        >
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-medium text-text-primary">Kapitel lesen</h4>
+            <label class="cursor-pointer" onclick={(e: MouseEvent) => e.stopPropagation()}>
+              <input
+                type="checkbox"
+                checked={readingDone}
+                onchange={toggleReading}
+                class="h-5 w-5 rounded border-text-muted accent-accent"
+              />
+            </label>
+          </div>
+          <p class="mt-2 text-xs text-text-muted">
+            {readingDone ? "Erledigt!" : "AMBOSS-Kapitel durcharbeiten"}
+          </p>
+        </button>
+
+        <!-- Kreuzen Card -->
+        <button
+          onclick={openAmbossKreuzen}
+          class="rounded-xl bg-bg-secondary border border-border p-4 text-left transition-colors hover:border-accent/40 cursor-pointer"
+        >
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-medium text-text-primary">{todayAmboss.question_count} Fragen kreuzen</h4>
+            <label class="cursor-pointer" onclick={(e: MouseEvent) => e.stopPropagation()}>
+              <input
+                type="checkbox"
+                checked={kreuzenDone}
+                onchange={toggleKreuzen}
+                class="h-5 w-5 rounded border-text-muted accent-accent"
+              />
+            </label>
+          </div>
+          {#if kreuzenTotal > 0}
+            <p class="mt-2 text-xs text-text-secondary">
+              {kreuzenCorrect}/{kreuzenTotal} richtig ({formatPercent(kreuzenCorrect, kreuzenTotal)})
+            </p>
+          {:else}
+            <p class="mt-2 text-xs text-text-muted">
+              {kreuzenDone ? "Erledigt!" : "AMBOSS-Kreuzsitzung starten"}
+            </p>
+          {/if}
+        </button>
+      </div>
+    {/if}
 
     <!-- Anki & Streak -->
     <div class="grid grid-cols-3 gap-4">

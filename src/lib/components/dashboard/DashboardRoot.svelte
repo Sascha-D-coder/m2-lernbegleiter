@@ -6,6 +6,7 @@
   import RetainTab from "./tabs/RetainTab.svelte";
   import StatsTab from "./tabs/StatsTab.svelte";
   import SettingsTab from "./tabs/SettingsTab.svelte";
+  import UpdateChecker from "./UpdateChecker.svelte";
   import { loadSettings, getSettings } from "$lib/stores/settingsStore.svelte";
   import { loadAmbossDays, loadCalendarDays, setCalendarDays, isPlanGenerated, importAmbossPlan } from "$lib/stores/planStore.svelte";
   import { startPolling } from "$lib/stores/ankiStore.svelte";
@@ -41,6 +42,7 @@
   async function initDashboard() {
     try {
       await loadSettings();
+      document.documentElement.setAttribute("data-theme", getSettings().theme);
       await loadAmbossDays();
 
       // Try loading persisted calendar from DB first
@@ -94,7 +96,7 @@
           class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors
             {activeTab === tab.id
               ? 'bg-accent/15 text-accent font-medium'
-              : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'}"
+              : 'text-text-secondary hover:bg-bg-primary hover:text-text-primary'}"
           onclick={() => (activeTab = tab.id)}
         >
           <span class="text-base">{tab.icon}</span>
@@ -102,6 +104,9 @@
         </button>
       {/each}
     </div>
+
+    <!-- Update notification -->
+    <UpdateChecker />
 
     <!-- Bottom info -->
     <div class="border-t border-border px-4 py-3">

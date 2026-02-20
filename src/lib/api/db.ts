@@ -237,4 +237,20 @@ const migrations = [
       CREATE INDEX IF NOT EXISTS idx_mastery_history ON mastery_history(subject, recorded_at);
     `,
   },
+  {
+    name: "003_plan_settings",
+    sql: `
+      ALTER TABLE settings ADD COLUMN plan_start_date TEXT DEFAULT '2026-04-06';
+
+      CREATE TABLE IF NOT EXISTS chapter_progress (
+        id INTEGER PRIMARY KEY,
+        amboss_day_number INTEGER NOT NULL,
+        chapter_name TEXT NOT NULL,
+        completed INTEGER DEFAULT 0,
+        completed_at TEXT,
+        UNIQUE(amboss_day_number, chapter_name)
+      );
+      CREATE INDEX IF NOT EXISTS idx_chapter_progress ON chapter_progress(amboss_day_number);
+    `,
+  },
 ];

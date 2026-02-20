@@ -82,8 +82,8 @@
     "vollzeit-late": { bg: "bg-green-400/20", text: "text-green-300", label: "Vollzeit (sp\u00e4t)" },
     "vacation-june": { bg: "bg-amber-500/20", text: "text-amber-400", label: "Urlaub Juni" },
     "vacation-sept": { bg: "bg-amber-500/20", text: "text-amber-400", label: "Urlaub Sept" },
-    weekend: { bg: "bg-white/5", text: "text-text-muted", label: "Wochenende" },
-    "exam-prep": { bg: "bg-red-500/20", text: "text-red-400", label: "Pr\u00fcfungsvorbereitung" },
+    weekend: { bg: "bg-bg-primary", text: "text-text-muted", label: "Wochenende" },
+    "exam-prep": { bg: "bg-red-500/20", text: "text-red-400", label: "Probeklausuren" },
     buffer: { bg: "bg-transparent", text: "text-text-muted", label: "Puffer" },
   };
 
@@ -171,7 +171,7 @@
       // Build the study plan using settings
       const settings = getSettings();
       const planConfig = {
-        startDate: "2026-04-01",
+        startDate: settings.planStartDate,
         examDate: settings.examDate,
         semesterEndDate: settings.semesterEndDate,
         juneVacation: {
@@ -212,11 +212,18 @@
     <!-- Generate Plan CTA -->
     <div class="rounded-xl bg-bg-secondary border border-border p-8 text-center">
       <div class="text-4xl mb-3">&#128197;</div>
-      <h3 class="text-lg font-semibold text-text-primary">Lernplan generieren</h3>
-      <p class="text-sm text-text-muted mt-2 mb-6">
-        Erstelle deinen personalisierten Lernplan basierend auf dem AMBOSS 100-Tage-Plan
-        und deinen Einstellungen.
-      </p>
+      {#if calendarDays.length > 0}
+        <h3 class="text-lg font-semibold text-text-primary">Lernplan noch nicht gestartet</h3>
+        <p class="text-sm text-text-muted mt-2 mb-6">
+          Dein Lernplan wurde erstellt, hat aber noch nicht begonnen. Schau bald wieder vorbei!
+        </p>
+      {:else}
+        <h3 class="text-lg font-semibold text-text-primary">Lernplan generieren</h3>
+        <p class="text-sm text-text-muted mt-2 mb-6">
+          Erstelle deinen personalisierten Lernplan basierend auf dem AMBOSS 100-Tage-Plan
+          und deinen Einstellungen.
+        </p>
+      {/if}
 
       {#if error}
         <div class="mb-4 rounded-lg bg-danger/10 border border-danger/20 p-3 text-sm text-danger">
@@ -238,7 +245,7 @@
             Plan wird generiert...
           </span>
         {:else}
-          Plan generieren
+          {calendarDays.length > 0 ? "Plan neu generieren" : "Plan generieren"}
         {/if}
       </button>
     </div>
@@ -381,14 +388,14 @@
                 </p>
                 <div class="flex flex-wrap gap-2 mt-2">
                   {#if sel.splitPart}
-                    <span class="rounded-md bg-white/5 px-2 py-0.5 text-xs text-text-secondary">
+                    <span class="rounded-md bg-bg-primary px-2 py-0.5 text-xs text-text-secondary">
                       {splitLabel(sel.splitPart)}
                     </span>
                   {/if}
-                  <span class="rounded-md bg-white/5 px-2 py-0.5 text-xs text-text-secondary">
+                  <span class="rounded-md bg-bg-primary px-2 py-0.5 text-xs text-text-secondary">
                     {sel.ambossDay.question_count} Fragen
                   </span>
-                  <span class="rounded-md bg-white/5 px-2 py-0.5 text-xs text-text-secondary">
+                  <span class="rounded-md bg-bg-primary px-2 py-0.5 text-xs text-text-secondary">
                     Anki: {sel.ankiTarget}
                   </span>
                   {#if sel.retainTestScheduled}
@@ -402,7 +409,7 @@
                   {#if sel.phase === "vacation-june" || sel.phase === "vacation-sept"}
                     Urlaub &ndash; Nur Anki ({sel.ankiTarget} Karten)
                   {:else if sel.phase === "exam-prep"}
-                    Generalprobe / Mock-Examen &ndash; Anki: {sel.ankiTarget}
+                    AMBOSS Probeklausuren &ndash; Anki: {sel.ankiTarget}
                   {:else if sel.phase === "weekend"}
                     Wochenende &ndash; Leichtes Anki ({sel.ankiTarget} Karten)
                   {:else}
@@ -445,9 +452,9 @@
                     const calIdx = calendarDays.findIndex((d) => d.date === day.date);
                     selectedDayIndex = calIdx >= 0 ? calIdx : null;
                   }}
-                  class="border-b border-border/50 cursor-pointer transition-colors hover:bg-white/5
+                  class="border-b border-border/50 cursor-pointer transition-colors hover:bg-bg-primary
                     {isToday ? 'bg-accent/10 border-l-2 border-l-accent' : ''}
-                    {isSelected ? 'bg-white/10' : ''}"
+                    {isSelected ? 'bg-bg-primary' : ''}"
                 >
                   <td class="px-3 py-2 whitespace-nowrap">
                     <span class="text-text-secondary">

@@ -11,7 +11,7 @@
 // ---------------------------------------------------------------------------
 
 export interface PlanConfig {
-  startDate: string;           // ISO date, default "2026-04-01"
+  startDate: string;           // ISO date, default "2026-04-06"
   examDate: string;            // ISO date, default "2026-10-14"
   semesterEndDate: string;     // ISO date, default "2026-07-20"
   juneVacation: { start: string; end: string };
@@ -104,8 +104,8 @@ export function getDaysUntilExam(config: PlanConfig): number {
 // Phase Classification
 // ---------------------------------------------------------------------------
 
-/** Number of calendar days reserved for final exam prep (Generalprobe). */
-const EXAM_PREP_DAYS = 12;
+/** Number of calendar days reserved for Probeklausuren-only period (AMBOSS mock exams). */
+const EXAM_PREP_DAYS = 14;
 
 /**
  * Determine the study phase for a given date based on the plan configuration.
@@ -114,7 +114,7 @@ const EXAM_PREP_DAYS = 12;
  *   1. Weekend check (if weekendsOff)
  *   2. September vacation (complete rest)
  *   3. June vacation (Anki only)
- *   4. Exam prep window (last EXAM_PREP_DAYS before exam)
+ *   4. Exam prep window (last 14 days before exam -- Probeklausuren only)
  *   5. Vollzeit-late (after September vacation, before exam prep)
  *   6. Vollzeit (after semester end, before September vacation)
  *   7. Semester-late (after June vacation, before semester end)
@@ -178,7 +178,7 @@ export function getPhaseForDate(date: Date, config: PlanConfig): Phase {
 
 export function getDefaultConfig(): PlanConfig {
   return {
-    startDate: '2026-04-01',
+    startDate: '2026-04-06',
     examDate: '2026-10-14',
     semesterEndDate: '2026-07-20',
     juneVacation: { start: '2026-06-01', end: '2026-06-14' },
@@ -223,7 +223,7 @@ export function generateCalendar(config: PlanConfig): CalendarDay[] {
         ankiTarget = 200;
         break;
       case 'exam-prep':
-        ankiTarget = 150;
+        ankiTarget = 100; // light Anki OK, focus is on AMBOSS Probeklausuren
         break;
       case 'weekend':
         ankiTarget = 50; // light weekend Anki
@@ -457,10 +457,11 @@ export function stretchPlan(
   // ------------------------------------------------------------------
   for (const cal of result) {
     if (cal.phase === 'exam-prep' && cal.ambossDay === null) {
-      // These days are reserved for Generalprobe / full mock exams.
-      // No AMBOSS day assigned; the UI can render them specially.
+      // These 14 days are reserved for AMBOSS Probeklausuren only.
+      // No regular study or Wiederholungen -- just mock exams.
+      // Light Anki is OK but the focus is on Probeklausuren.
       cal.splitPart = null;
-      cal.ankiTarget = 150;
+      cal.ankiTarget = 100;
     }
   }
 

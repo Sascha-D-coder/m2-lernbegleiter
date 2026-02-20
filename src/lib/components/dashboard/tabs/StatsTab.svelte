@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getCalendarDays, getTotalStudyDays, getProgressPercent, isPlanGenerated } from "$lib/stores/planStore.svelte";
+  import { getCalendarDays, getTotalStudyDays, getProgressPercent, isPlanGenerated, getAmbossDays } from "$lib/stores/planStore.svelte";
   import { getTestHistory, loadTestHistory, getMasteryMap, loadMastery, getMasteryLevel } from "$lib/stores/retainStore.svelte";
   import { getDb } from "$lib/api/db";
   import { daysUntil } from "$lib/utils/dateUtils";
@@ -12,10 +12,14 @@
   let currentStreak = $state(0);
   let studyHoursTotal = $state(0);
 
+  // Chapter progress state
+  let chapterProgressMap = $state<Record<number, Record<string, boolean>>>({});
+
   $effect(() => {
     loadStats();
     loadTestHistory();
     loadMastery();
+    loadChapterProgress();
   });
 
   async function loadStats() {
@@ -57,8 +61,29 @@
     }
   }
 
+  async function loadChapterProgress() {
+    try {
+      const db = await getDb();
+      const rows = await db.select<Record<string, unknown>[]>(
+        "SELECT amboss_day_number, chapter_name, completed FROM chapter_progress"
+      );
+      const map: Record<number, Record<string, boolean>> = {};
+      for (const row of rows) {
+        const dayNum = row.amboss_day_number as number;
+        const chapterName = row.chapter_name as string;
+        const completed = Boolean(row.completed);
+        if (!map[dayNum]) map[dayNum] = {};
+        map[dayNum][chapterName] = completed;
+      }
+      chapterProgressMap = map;
+    } catch (error) {
+      console.error("Failed to load chapter progress:", error);
+    }
+  }
+
   let settings = $derived(getSettings());
   let calendarDays = $derived(getCalendarDays());
+  let ambossDays = $derived(getAmbossDays());
   let planGenerated = $derived(isPlanGenerated());
   let progressPercent = $derived(getProgressPercent());
   let examDaysLeft = $derived(daysUntil(settings.examDate));
@@ -91,6 +116,40 @@
     return counts;
   });
 
+  // Chapter progress grouped by subject
+  let chapterProgressBySubject = $derived.by(() => {
+    const subjectMap: Record<string, { totalChapters: number; completedChapters: number }> = {};
+
+    for (const amboss of ambossDays) {
+      if (amboss.is_optional) continue;
+      const name = amboss.subject;
+      if (!subjectMap[name]) {
+        subjectMap[name] = { totalChapters: 0, completedChapters: 0 };
+      }
+
+      for (const chapter of amboss.chapters) {
+        subjectMap[name].totalChapters++;
+        const dayProgress = chapterProgressMap[amboss.day_number];
+        if (dayProgress && dayProgress[chapter]) {
+          subjectMap[name].completedChapters++;
+        }
+      }
+    }
+
+    return Object.entries(subjectMap)
+      .map(([name, data]) => ({
+        name,
+        totalChapters: data.totalChapters,
+        completedChapters: data.completedChapters,
+        percent: data.totalChapters > 0 ? Math.round((data.completedChapters / data.totalChapters) * 100) : 0,
+      }))
+      .sort((a, b) => b.totalChapters - a.totalChapters);
+  });
+
+  let totalChapters = $derived(chapterProgressBySubject.reduce((s, e) => s + e.totalChapters, 0));
+  let totalCompletedChapters = $derived(chapterProgressBySubject.reduce((s, e) => s + e.completedChapters, 0));
+  let totalChapterPercent = $derived(totalChapters > 0 ? Math.round((totalCompletedChapters / totalChapters) * 100) : 0);
+
   let recentTests = $derived(testHistory.slice(0, 10));
 
   function formatDate(dateStr: string): string {
@@ -110,6 +169,20 @@
       return dateStr;
     }
   }
+
+  function progressColor(percent: number): string {
+    if (percent >= 80) return 'bg-mastery-sicher';
+    if (percent >= 60) return 'bg-mastery-solide';
+    if (percent >= 30) return 'bg-mastery-grundlagen';
+    return 'bg-mastery-unsicher';
+  }
+
+  function progressTextColor(percent: number): string {
+    if (percent >= 80) return 'text-mastery-sicher';
+    if (percent >= 60) return 'text-mastery-solide';
+    if (percent >= 30) return 'text-mastery-grundlagen';
+    return 'text-mastery-unsicher';
+  }
 </script>
 
 <div class="space-y-6">
@@ -123,7 +196,7 @@
       <div class="text-4xl mb-3">📊</div>
       <h3 class="text-lg font-semibold text-text-primary">Plan noch nicht generiert</h3>
       <p class="text-sm text-text-muted mt-2">
-        Generiere zuerst deinen Lernplan, um Statistiken zu sehen.
+        Generiere zuerst deinen Lernplan unter dem <span class="font-medium text-accent">Plan</span>-Tab, um Statistiken zu sehen.
       </p>
     </div>
   {:else}
@@ -186,6 +259,43 @@
       </div>
     </div>
 
+    <!-- Chapter Progress -->
+    <div class="rounded-xl bg-bg-secondary border border-border p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-semibold text-text-primary">Kapitel-Fortschritt</h3>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-text-muted">{totalCompletedChapters}/{totalChapters}</span>
+          <span class="text-xs font-medium {progressTextColor(totalChapterPercent)}">{totalChapterPercent}%</span>
+        </div>
+      </div>
+
+      <!-- Overall progress bar -->
+      <div class="h-2 overflow-hidden rounded-full bg-border mb-4">
+        <div class="h-full rounded-full {progressColor(totalChapterPercent)} transition-all duration-500" style="width: {totalChapterPercent}%"></div>
+      </div>
+
+      {#if chapterProgressBySubject.length === 0}
+        <p class="text-sm text-text-muted text-center py-2">Keine Kapitel im Plan</p>
+      {:else}
+        <div class="space-y-2.5">
+          {#each chapterProgressBySubject as subject}
+            <div class="rounded-lg bg-bg-primary border border-border/50 px-3 py-2">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-xs font-medium text-text-secondary truncate mr-2">{subject.name}</span>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="text-[10px] text-text-muted">{subject.completedChapters}/{subject.totalChapters}</span>
+                  <span class="text-[10px] font-medium {progressTextColor(subject.percent)}">{subject.percent}%</span>
+                </div>
+              </div>
+              <div class="h-1 overflow-hidden rounded-full bg-border">
+                <div class="h-full rounded-full {progressColor(subject.percent)} transition-all duration-500" style="width: {subject.percent}%"></div>
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+
     <!-- Mastery Overview -->
     <div class="rounded-xl bg-bg-secondary border border-border p-4">
       <h3 class="text-sm font-semibold text-text-primary mb-3">Mastery-Verteilung</h3>
@@ -222,7 +332,7 @@
         <div class="space-y-2">
           {#each recentActivity as entry}
             {@const entryPercent = entry.kreuzenTotal > 0 ? Math.round((entry.kreuzenCorrect / entry.kreuzenTotal) * 100) : null}
-            <div class="flex items-center justify-between rounded-lg bg-bg-primary/50 border border-border/50 px-3 py-2">
+            <div class="flex items-center justify-between rounded-lg bg-bg-primary border border-border/50 px-3 py-2">
               <div class="flex items-center gap-3 min-w-0">
                 <div class="text-xs font-mono text-text-muted shrink-0">{formatDate(entry.date)}</div>
                 <div class="text-sm text-text-secondary truncate">{entry.subject}</div>
@@ -253,7 +363,7 @@
       {:else}
         <div class="space-y-2">
           {#each recentTests as test}
-            <div class="flex items-center justify-between rounded-lg bg-bg-primary/50 border border-border/50 px-3 py-2">
+            <div class="flex items-center justify-between rounded-lg bg-bg-primary border border-border/50 px-3 py-2">
               <div class="flex items-center gap-3 min-w-0">
                 <div class="text-xs font-mono text-text-muted shrink-0">{formatDateLong(test.startedAt)}</div>
                 <div class="text-sm text-text-secondary truncate">

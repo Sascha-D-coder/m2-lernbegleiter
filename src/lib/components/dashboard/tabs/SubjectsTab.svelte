@@ -8,7 +8,40 @@
   let planGenerated = $derived(isPlanGenerated());
   let masteryMap = $derived(getMasteryMap());
 
-  // Build subject summary from calendar/amboss days
+  // Track which subject cards are expanded
+  let expandedSubjects = $state<Set<string>>(new Set());
+
+  function toggleExpand(name: string) {
+    const next = new Set(expandedSubjects);
+    if (next.has(name)) {
+      next.delete(name);
+    } else {
+      next.add(name);
+    }
+    expandedSubjects = next;
+  }
+
+  const colorMap: Record<string, string> = {
+    "Pharmakologie": "bg-purple-500",
+    "Innere Medizin": "bg-red-500",
+    "Chirurgie": "bg-orange-500",
+    "Neurologie": "bg-blue-500",
+    "Pädiatrie": "bg-green-500",
+    "Gynäkologie": "bg-pink-500",
+    "Orthopädie/Unfallchirurgie": "bg-amber-500",
+    "Psychiatrie": "bg-indigo-500",
+    "Dermatologie": "bg-yellow-500",
+    "HNO": "bg-teal-500",
+    "Augenheilkunde": "bg-cyan-500",
+    "Anästhesiologie": "bg-emerald-500",
+    "Urologie": "bg-lime-500",
+    "Radiologie": "bg-slate-500",
+    "Rechtsmedizin": "bg-stone-500",
+    "Notfallmedizin": "bg-rose-500",
+    "Allgemeinmedizin": "bg-sky-500",
+  };
+
+  // Build subject summary with AMBOSS day numbers and sub-topics
   let subjectSummary = $derived.by(() => {
     const subjects: Record<string, {
       name: string;
@@ -17,27 +50,10 @@
       totalQuestions: number;
       mastery: number;
       color: string;
+      dayNumbers: number[];
+      firstDayNumber: number;
+      subTopics: { subTopic: string; dayNumber: number; chapters: string[]; questionCount: number }[];
     }> = {};
-
-    const colorMap: Record<string, string> = {
-      "Pharmakologie": "bg-purple-500",
-      "Innere Medizin": "bg-red-500",
-      "Chirurgie": "bg-orange-500",
-      "Neurologie": "bg-blue-500",
-      "Pädiatrie": "bg-green-500",
-      "Gynäkologie": "bg-pink-500",
-      "Orthopädie/Unfallchirurgie": "bg-amber-500",
-      "Psychiatrie": "bg-indigo-500",
-      "Dermatologie": "bg-yellow-500",
-      "HNO": "bg-teal-500",
-      "Augenheilkunde": "bg-cyan-500",
-      "Anästhesiologie": "bg-emerald-500",
-      "Urologie": "bg-lime-500",
-      "Radiologie": "bg-slate-500",
-      "Rechtsmedizin": "bg-stone-500",
-      "Notfallmedizin": "bg-rose-500",
-      "Allgemeinmedizin": "bg-sky-500",
-    };
 
     const todayStr = new Date().toISOString().split("T")[0];
 
@@ -49,14 +65,25 @@
           name,
           totalDays: 0,
           completedDays: 0,
-          totalQuestions: amboss.question_count,
+          totalQuestions: 0,
           mastery: masteryMap[name]?.masteryScore ?? 0,
           color: colorMap[name] ?? "bg-gray-500",
+          dayNumbers: [],
+          firstDayNumber: amboss.day_number,
+          subTopics: [],
         };
-      } else {
-        subjects[name].totalQuestions += amboss.question_count;
       }
+      subjects[name].totalQuestions += amboss.question_count;
       subjects[name].totalDays++;
+      subjects[name].dayNumbers.push(amboss.day_number);
+
+      // Track sub-topics with their day numbers and chapters
+      subjects[name].subTopics.push({
+        subTopic: amboss.sub_topic || name,
+        dayNumber: amboss.day_number,
+        chapters: amboss.chapters,
+        questionCount: amboss.question_count,
+      });
     }
 
     // Count completed days from calendar
@@ -71,12 +98,21 @@
       }
     }
 
-    return Object.values(subjects).sort((a, b) => b.totalDays - a.totalDays);
+    // Sort by first day_number appearance (AMBOSS order)
+    return Object.values(subjects).sort((a, b) => a.firstDayNumber - b.firstDayNumber);
   });
 
   $effect(() => {
     loadMastery();
   });
+
+  function dayRange(dayNumbers: number[]): string {
+    if (dayNumbers.length === 0) return "";
+    const min = Math.min(...dayNumbers);
+    const max = Math.max(...dayNumbers);
+    if (min === max) return `Tag ${min}`;
+    return `Tag ${min}\u2013${max}`;
+  }
 
   function masteryLabel(score: number): string {
     const level = getMasteryLevel(score);
@@ -99,12 +135,16 @@
     };
     return colors[level];
   }
+
+  function ambossSearchUrl(chapterName: string): string {
+    return `https://next.amboss.com/de/search?q=${encodeURIComponent(chapterName)}&v=overview`;
+  }
 </script>
 
 <div class="space-y-6">
   <div>
     <h2 class="text-2xl font-bold text-text-primary">Fächer</h2>
-    <p class="text-sm text-text-secondary">Fortschritt pro Fachgebiet</p>
+    <p class="text-sm text-text-secondary">Fortschritt pro Fachgebiet mit AMBOSS 100-Tage Zuordnung</p>
   </div>
 
   {#if !planGenerated}
@@ -112,7 +152,7 @@
       <div class="text-4xl mb-3">📚</div>
       <h3 class="text-lg font-semibold text-text-primary">Plan noch nicht generiert</h3>
       <p class="text-sm text-text-muted mt-2">
-        Generiere zuerst deinen Lernplan, um den Fortschritt pro Fach zu sehen.
+        Generiere zuerst deinen Lernplan unter dem <span class="font-medium text-accent">Plan</span>-Tab, um den Fortschritt pro Fach zu sehen.
       </p>
     </div>
   {:else if subjectSummary.length === 0}
@@ -124,36 +164,47 @@
       </p>
     </div>
   {:else}
-    <div class="grid grid-cols-2 gap-3 lg:grid-cols-3">
+    <div class="space-y-3">
       {#each subjectSummary as subject}
         {@const progressPercent = subject.totalDays > 0 ? Math.round((subject.completedDays / subject.totalDays) * 100) : 0}
-        <div class="rounded-xl bg-bg-secondary border border-border p-4 transition-colors hover:border-accent/30">
-          <div class="flex items-center gap-2 mb-3">
-            <div class="h-2.5 w-2.5 shrink-0 rounded-full {subject.color}"></div>
-            <h4 class="text-sm font-medium text-text-primary truncate">{subject.name}</h4>
-          </div>
+        {@const isExpanded = expandedSubjects.has(subject.name)}
+        <div class="rounded-xl bg-bg-secondary border border-border transition-colors hover:border-accent/30">
+          <!-- Subject Header (always visible, clickable to expand) -->
+          <button
+            class="w-full p-4 text-left"
+            onclick={() => toggleExpand(subject.name)}
+          >
+            <div class="flex items-center gap-2 mb-2">
+              <div class="h-2.5 w-2.5 shrink-0 rounded-full {subject.color}"></div>
+              <h4 class="text-sm font-medium text-text-primary truncate">{subject.name}</h4>
+              <span class="ml-auto shrink-0 rounded-md bg-accent/10 border border-accent/20 px-2 py-0.5 text-[10px] font-medium text-accent">
+                {dayRange(subject.dayNumbers)}
+              </span>
+              <svg
+                class="h-4 w-4 shrink-0 text-text-muted transition-transform {isExpanded ? 'rotate-180' : ''}"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
 
-          <div class="space-y-2">
             <div class="flex items-end justify-between">
               <div class="space-y-0.5">
                 <div class="text-xs text-text-muted">
-                  {subject.completedDays}/{subject.totalDays} Lerntage
-                </div>
-                <div class="text-xs text-text-muted">
-                  {subject.totalQuestions} Fragen
+                  {subject.completedDays}/{subject.totalDays} Lerntage &middot; {subject.totalQuestions} Fragen
                 </div>
               </div>
               <div class="text-lg font-bold text-text-secondary">{progressPercent}%</div>
             </div>
 
-            <div class="h-1.5 overflow-hidden rounded-full bg-border">
+            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-border">
               <div
                 class="h-full rounded-full {subject.color} opacity-70 transition-all duration-500"
                 style="width: {progressPercent}%"
               ></div>
             </div>
 
-            <div class="pt-1">
+            <div class="mt-2">
               {#if subject.mastery > 0}
                 <span class="inline-block rounded-md border px-1.5 py-0.5 text-[10px] font-medium {masteryBgColor(subject.mastery)}">
                   {masteryLabel(subject.mastery)} ({Math.round(subject.mastery * 100)}%)
@@ -162,7 +213,43 @@
                 <span class="text-[10px] text-text-muted">Mastery: --</span>
               {/if}
             </div>
-          </div>
+          </button>
+
+          <!-- Expanded: Sub-topics with day numbers and chapters -->
+          {#if isExpanded}
+            <div class="border-t border-border px-4 pb-4 pt-3">
+              <div class="space-y-2.5">
+                {#each subject.subTopics as entry}
+                  <div class="rounded-lg bg-bg-primary border border-border/50 px-3 py-2.5">
+                    <div class="flex items-center justify-between mb-1.5">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-mono font-medium text-accent">
+                          Tag {entry.dayNumber}
+                        </span>
+                        <span class="text-xs font-medium text-text-secondary truncate">{entry.subTopic}</span>
+                      </div>
+                      <span class="shrink-0 text-[10px] text-text-muted">{entry.questionCount} Fragen</span>
+                    </div>
+
+                    {#if entry.chapters.length > 0}
+                      <div class="flex flex-wrap gap-1.5 mt-1.5">
+                        {#each entry.chapters as chapter}
+                          <a
+                            href={ambossSearchUrl(chapter)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="rounded-md bg-bg-secondary border border-border/50 px-2 py-0.5 text-[11px] text-text-secondary hover:text-accent hover:border-accent/30 transition-colors cursor-pointer"
+                          >
+                            {chapter}
+                          </a>
+                        {/each}
+                      </div>
+                    {/if}
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
         </div>
       {/each}
     </div>
