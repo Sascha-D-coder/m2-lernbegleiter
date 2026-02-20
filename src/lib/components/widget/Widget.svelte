@@ -308,8 +308,7 @@
     background: var(--color-bg-widget);
     border-radius: 12px;
     border: 1px solid rgba(128, 128, 128, 0.15);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
     overflow: hidden;
     height: 100%;
   }

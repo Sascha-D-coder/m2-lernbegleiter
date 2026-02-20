@@ -118,21 +118,27 @@
   </nav>
 
   <!-- Main content -->
-  <main class="flex-1 overflow-y-auto p-6">
-    {#if activeTab === "today"}
-      <TodayTab />
-    {:else if activeTab === "plan"}
-      <PlanTab />
-    {:else if activeTab === "subjects"}
-      <SubjectsTab />
-    {:else if activeTab === "anki"}
-      <AnkiTab />
-    {:else if activeTab === "retain"}
-      <RetainTab />
-    {:else if activeTab === "stats"}
-      <StatsTab />
-    {:else if activeTab === "settings"}
-      <SettingsTab />
+  <main class="flex-1 overflow-hidden flex flex-col">
+    {#if activeTab === "plan"}
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <PlanTab />
+      </div>
+    {:else}
+      <div class="flex-1 overflow-y-auto p-6">
+        {#if activeTab === "today"}
+          <TodayTab />
+        {:else if activeTab === "subjects"}
+          <SubjectsTab />
+        {:else if activeTab === "anki"}
+          <AnkiTab />
+        {:else if activeTab === "retain"}
+          <RetainTab />
+        {:else if activeTab === "stats"}
+          <StatsTab />
+        {:else if activeTab === "settings"}
+          <SettingsTab />
+        {/if}
+      </div>
     {/if}
   </main>
 

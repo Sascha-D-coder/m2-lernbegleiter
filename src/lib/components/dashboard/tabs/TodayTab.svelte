@@ -149,8 +149,8 @@
     }
     const url = `https://next.amboss.com/de/search?q=${encodeURIComponent(chapter)}`;
     try {
-      const { open } = await import("@tauri-apps/plugin-shell");
-      await open(url);
+      const { openUrl } = await import("@tauri-apps/plugin-opener");
+      await openUrl(url);
       toastInfo(`Öffne "${chapter}" in AMBOSS...`);
     } catch {
       window.open(url, "_blank");
@@ -161,8 +161,8 @@
   async function openAmbossKreuzen() {
     const url = "https://next.amboss.com/de/questions";
     try {
-      const { open } = await import("@tauri-apps/plugin-shell");
-      await open(url);
+      const { openUrl } = await import("@tauri-apps/plugin-opener");
+      await openUrl(url);
       toastInfo("Öffne AMBOSS-Kreuzsitzung...");
     } catch {
       window.open(url, "_blank");
@@ -173,8 +173,8 @@
   async function openAmbossProbeklausur() {
     const url = "https://next.amboss.com/de/exams";
     try {
-      const { open } = await import("@tauri-apps/plugin-shell");
-      await open(url);
+      const { openUrl } = await import("@tauri-apps/plugin-opener");
+      await openUrl(url);
       toastInfo("Öffne AMBOSS-Probeklausuren...");
     } catch {
       window.open(url, "_blank");

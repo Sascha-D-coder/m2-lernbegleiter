@@ -110,8 +110,8 @@
     }
     const url = `https://next.amboss.com/de/search?q=${encodeURIComponent(chapter)}`;
     try {
-      const { open } = await import("@tauri-apps/plugin-shell");
-      await open(url);
+      const { openUrl } = await import("@tauri-apps/plugin-opener");
+      await openUrl(url);
       toastInfo(`Öffne "${chapter}" in AMBOSS...`);
     } catch {
       window.open(url, "_blank");
@@ -122,8 +122,8 @@
   async function openAmbossKreuzen() {
     const url = "https://next.amboss.com/de/questions";
     try {
-      const { open } = await import("@tauri-apps/plugin-shell");
-      await open(url);
+      const { openUrl } = await import("@tauri-apps/plugin-opener");
+      await openUrl(url);
       toastInfo("Öffne AMBOSS-Kreuzsitzung...");
     } catch {
       window.open(url, "_blank");
@@ -134,8 +134,8 @@
   async function openAmbossProbeklausur() {
     const url = "https://next.amboss.com/de/exams";
     try {
-      const { open } = await import("@tauri-apps/plugin-shell");
-      await open(url);
+      const { openUrl } = await import("@tauri-apps/plugin-opener");
+      await openUrl(url);
       toastInfo("Öffne AMBOSS-Probeklausuren...");
     } catch {
       window.open(url, "_blank");
@@ -242,7 +242,8 @@
   }
 </script>
 
-<div class="space-y-6">
+<div class="flex flex-col h-full">
+<div class="space-y-6 flex-1 overflow-y-auto p-6">
   <!-- Header -->
   <div>
     <h2 class="text-2xl font-bold text-text-primary">Lernplan</h2>
@@ -412,106 +413,6 @@
         {/each}
       </div>
 
-      <!-- Selected Day Detail -->
-      {#if selectedDayIndex !== null && calendarDays[selectedDayIndex]}
-        {@const sel = calendarDays[selectedDayIndex]}
-        {@const selStyle = phaseStyle(sel.phase)}
-        <div class="rounded-xl bg-bg-secondary border border-border p-4 sticky bottom-0">
-          <div class="flex items-start justify-between">
-            <div class="flex-1 min-w-0">
-              <div class="text-xs font-medium uppercase tracking-wider {selStyle.text}">
-                {PHASE_COLORS[sel.phase]?.label ?? sel.phase}
-              </div>
-              <h3 class="text-base font-semibold text-text-primary mt-0.5">
-                {formatDateGerman(parseISO(sel.date))}
-              </h3>
-              {#if sel.ambossDay}
-                <p class="text-sm text-text-secondary mt-1">
-                  Tag {sel.ambossDay.day_number}: {sel.ambossDay.subject} &ndash; {sel.ambossDay.sub_topic}
-                </p>
-
-                <!-- Chapters (clickable) -->
-                {#if sel.ambossDay.chapters && sel.ambossDay.chapters.length > 0}
-                  <div class="mt-2">
-                    <div class="text-xs font-medium text-text-muted mb-1.5">Kapitel:</div>
-                    <div class="flex flex-wrap gap-1.5">
-                      {#each sel.ambossDay.chapters as chapter}
-                        <button
-                          onclick={() => openAmbossChapter(chapter)}
-                          class="rounded-md bg-bg-primary border border-border/50 px-2 py-0.5 text-xs text-text-secondary hover:text-accent hover:border-accent/40 transition-colors cursor-pointer"
-                        >
-                          {chapter}
-                        </button>
-                      {/each}
-                    </div>
-                  </div>
-                {/if}
-
-                <!-- Action buttons (Lesen / Kreuzen) -->
-                <div class="flex flex-wrap gap-2 mt-3">
-                  {#if sel.splitPart === "reading" || sel.splitPart === "both"}
-                    <button
-                      onclick={() => openAmbossChapter(sel.ambossDay!.chapters[0] ?? sel.ambossDay!.subject)}
-                      class="rounded-md bg-accent/15 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/25 transition-colors cursor-pointer"
-                    >
-                      📖 Kapitel lesen
-                    </button>
-                  {/if}
-                  {#if sel.splitPart === "kreuzen" || sel.splitPart === "both"}
-                    <button
-                      onclick={openAmbossKreuzen}
-                      class="rounded-md bg-accent/15 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/25 transition-colors cursor-pointer"
-                    >
-                      ✏️ {sel.ambossDay.question_count} Fragen kreuzen
-                    </button>
-                  {/if}
-                  <span class="rounded-md bg-bg-primary px-2 py-0.5 text-xs text-text-secondary">
-                    Anki: {sel.ankiTarget}
-                  </span>
-                  {#if sel.retainTestScheduled}
-                    <span class="rounded-md bg-accent/20 px-2 py-0.5 text-xs text-accent">
-                      Retain-Test
-                    </span>
-                  {/if}
-                </div>
-              {:else}
-                {#if sel.phase === "exam-prep"}
-                  <p class="text-sm text-text-secondary mt-1">
-                    Nur AMBOSS-Probeklausuren &ndash; keine Wiederholungen oder neuen Themen.
-                  </p>
-                  <div class="flex flex-wrap gap-2 mt-2">
-                    <button
-                      onclick={openAmbossProbeklausur}
-                      class="rounded-md bg-red-500/15 px-3 py-1 text-xs font-medium text-red-400 hover:bg-red-500/25 transition-colors cursor-pointer"
-                    >
-                      📝 AMBOSS-Probeklausur starten
-                    </button>
-                    <span class="rounded-md bg-bg-primary px-2 py-0.5 text-xs text-text-secondary">
-                      Anki: {sel.ankiTarget} (leicht)
-                    </span>
-                  </div>
-                {:else}
-                  <p class="text-sm text-text-muted mt-1">
-                    {#if sel.phase === "vacation-june" || sel.phase === "vacation-sept"}
-                      Urlaub &ndash; Nur Anki ({sel.ankiTarget} Karten)
-                    {:else if sel.phase === "weekend"}
-                      Wochenende &ndash; Leichtes Anki ({sel.ankiTarget} Karten)
-                    {:else}
-                      Kein AMBOSS-Tag zugewiesen
-                    {/if}
-                  </p>
-                {/if}
-              {/if}
-            </div>
-            <button
-              onclick={() => (selectedDayIndex = null)}
-              class="text-text-muted hover:text-text-primary text-lg leading-none p-1"
-            >
-              &times;
-            </button>
-          </div>
-        </div>
-      {/if}
     {:else}
       <!-- List View: Study days only -->
       <div class="rounded-xl bg-bg-secondary border border-border overflow-hidden">
@@ -580,4 +481,106 @@
       </div>
     {/if}
   {/if}
-</div>
+</div><!-- end scrollable content -->
+
+<!-- Selected Day Detail: docked to bottom outside scroll area -->
+{#if selectedDayIndex !== null && calendarDays[selectedDayIndex]}
+  {@const sel = calendarDays[selectedDayIndex]}
+  {@const selStyle = phaseStyle(sel.phase)}
+  <div class="shrink-0 border-t border-border bg-bg-secondary p-4">
+    <div class="flex items-start justify-between">
+      <div class="flex-1 min-w-0">
+        <div class="text-xs font-medium uppercase tracking-wider {selStyle.text}">
+          {PHASE_COLORS[sel.phase]?.label ?? sel.phase}
+        </div>
+        <h3 class="text-base font-semibold text-text-primary mt-0.5">
+          {formatDateGerman(parseISO(sel.date))}
+        </h3>
+        {#if sel.ambossDay}
+          <p class="text-sm text-text-secondary mt-1">
+            Tag {sel.ambossDay.day_number}: {sel.ambossDay.subject} &ndash; {sel.ambossDay.sub_topic}
+          </p>
+
+          <!-- Chapters (clickable) -->
+          {#if sel.ambossDay.chapters && sel.ambossDay.chapters.length > 0}
+            <div class="mt-2">
+              <div class="text-xs font-medium text-text-muted mb-1.5">Kapitel:</div>
+              <div class="flex flex-wrap gap-1.5">
+                {#each sel.ambossDay.chapters as chapter}
+                  <button
+                    onclick={() => openAmbossChapter(chapter)}
+                    class="rounded-md bg-bg-primary border border-border/50 px-2 py-0.5 text-xs text-text-secondary hover:text-accent hover:border-accent/40 transition-colors cursor-pointer"
+                  >
+                    {chapter}
+                  </button>
+                {/each}
+              </div>
+            </div>
+          {/if}
+
+          <!-- Action buttons (Lesen / Kreuzen) -->
+          <div class="flex flex-wrap gap-2 mt-3">
+            {#if sel.splitPart === "reading" || sel.splitPart === "both"}
+              <button
+                onclick={() => openAmbossChapter(sel.ambossDay!.chapters[0] ?? sel.ambossDay!.subject)}
+                class="rounded-md bg-accent/15 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/25 transition-colors cursor-pointer"
+              >
+                📖 Kapitel lesen
+              </button>
+            {/if}
+            {#if sel.splitPart === "kreuzen" || sel.splitPart === "both"}
+              <button
+                onclick={openAmbossKreuzen}
+                class="rounded-md bg-accent/15 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/25 transition-colors cursor-pointer"
+              >
+                ✏️ {sel.ambossDay.question_count} Fragen kreuzen
+              </button>
+            {/if}
+            <span class="rounded-md bg-bg-primary px-2 py-0.5 text-xs text-text-secondary">
+              Anki: {sel.ankiTarget}
+            </span>
+            {#if sel.retainTestScheduled}
+              <span class="rounded-md bg-accent/20 px-2 py-0.5 text-xs text-accent">
+                Retain-Test
+              </span>
+            {/if}
+          </div>
+        {:else}
+          {#if sel.phase === "exam-prep"}
+            <p class="text-sm text-text-secondary mt-1">
+              Nur AMBOSS-Probeklausuren &ndash; keine Wiederholungen oder neuen Themen.
+            </p>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <button
+                onclick={openAmbossProbeklausur}
+                class="rounded-md bg-red-500/15 px-3 py-1 text-xs font-medium text-red-400 hover:bg-red-500/25 transition-colors cursor-pointer"
+              >
+                📝 AMBOSS-Probeklausur starten
+              </button>
+              <span class="rounded-md bg-bg-primary px-2 py-0.5 text-xs text-text-secondary">
+                Anki: {sel.ankiTarget} (leicht)
+              </span>
+            </div>
+          {:else}
+            <p class="text-sm text-text-muted mt-1">
+              {#if sel.phase === "vacation-june" || sel.phase === "vacation-sept"}
+                Urlaub &ndash; Nur Anki ({sel.ankiTarget} Karten)
+              {:else if sel.phase === "weekend"}
+                Wochenende &ndash; Leichtes Anki ({sel.ankiTarget} Karten)
+              {:else}
+                Kein AMBOSS-Tag zugewiesen
+              {/if}
+            </p>
+          {/if}
+        {/if}
+      </div>
+      <button
+        onclick={() => (selectedDayIndex = null)}
+        class="text-text-muted hover:text-text-primary text-lg leading-none p-1"
+      >
+        &times;
+      </button>
+    </div>
+  </div>
+{/if}
+</div><!-- end outer flex container -->
