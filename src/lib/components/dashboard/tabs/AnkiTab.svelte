@@ -1,22 +1,29 @@
 <script lang="ts">
-  let connected = $state(false);
+  import {
+    isConnected,
+    getDeckNamesList,
+    getCardsDueCount_,
+    getDeckStatsMap,
+    getLastSynced,
+    syncAnki,
+  } from "$lib/stores/ankiStore.svelte";
+  let connected = $derived(isConnected());
+  let deckNames = $derived(getDeckNamesList());
+  let cardsDue = $derived(getCardsDueCount_());
+  let deckStats = $derived(getDeckStatsMap());
+  let lastSynced = $derived(getLastSynced());
+  let syncing = $state(false);
 
-  async function checkConnection() {
-    try {
-      const response = await fetch("http://localhost:8765", {
-        method: "POST",
-        body: JSON.stringify({ action: "version", version: 6 }),
-      });
-      const data = await response.json();
-      connected = data.result != null;
-    } catch {
-      connected = false;
-    }
+  async function handleSync() {
+    syncing = true;
+    await syncAnki();
+    syncing = false;
   }
 
-  $effect(() => {
-    checkConnection();
-  });
+  function formatTime(date: Date | null): string {
+    if (!date) return "Nie";
+    return date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  }
 </script>
 
 <div class="space-y-6">
@@ -34,14 +41,17 @@
           <div class="text-sm font-medium text-text-primary">
             AnkiConnect {connected ? "Verbunden" : "Nicht verbunden"}
           </div>
-          <div class="text-xs text-text-muted">localhost:8765</div>
+          <div class="text-xs text-text-muted">
+            localhost:8765 &middot; Zuletzt: {formatTime(lastSynced)}
+          </div>
         </div>
       </div>
       <button
-        onclick={checkConnection}
-        class="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-white/10"
+        onclick={handleSync}
+        disabled={syncing}
+        class="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-white/10 disabled:opacity-50"
       >
-        Verbindung testen
+        {syncing ? "Synchronisiere..." : "Jetzt synchronisieren"}
       </button>
     </div>
   </div>
@@ -59,11 +69,71 @@
       </ol>
     </div>
   {:else}
-    <div class="rounded-xl bg-bg-secondary border border-border p-8 text-center">
-      <div class="text-4xl mb-3">🃏</div>
-      <h3 class="text-lg font-semibold text-text-primary">Anki verbunden!</h3>
-      <p class="text-sm text-text-muted mt-2">
-        Detaillierte Deck-Statistiken und High-Yield Tracking werden in Phase 3 implementiert.
+    <!-- Overview Cards -->
+    <div class="grid grid-cols-3 gap-4">
+      <div class="rounded-xl bg-bg-secondary border border-border p-4 text-center">
+        <div class="text-2xl font-bold text-accent">{cardsDue}</div>
+        <div class="text-xs text-text-muted">Karten fällig</div>
+      </div>
+      <div class="rounded-xl bg-bg-secondary border border-border p-4 text-center">
+        <div class="text-2xl font-bold text-text-primary">{deckNames.length}</div>
+        <div class="text-xs text-text-muted">M2-Decks gefunden</div>
+      </div>
+      <div class="rounded-xl bg-bg-secondary border border-border p-4 text-center">
+        <div class="text-2xl font-bold text-text-primary">
+          {Object.values(deckStats).reduce((s, d) => s + (d.total_in_deck ?? 0), 0)}
+        </div>
+        <div class="text-xs text-text-muted">Karten gesamt</div>
+      </div>
+    </div>
+
+    <!-- Deck List -->
+    <div class="rounded-xl bg-bg-secondary border border-border p-5">
+      <h3 class="text-base font-semibold text-text-primary mb-4">Erkannte M2-Decks</h3>
+      {#if deckNames.length === 0}
+        <p class="text-sm text-text-muted">
+          Keine M2-Decks gefunden. Stelle sicher, dass AnkiZin oder AnkiPhil installiert sind.
+        </p>
+      {:else}
+        <div class="space-y-2">
+          {#each deckNames as deck}
+            {@const stats = deckStats[deck]}
+            <div class="flex items-center justify-between rounded-lg bg-white/5 px-4 py-3">
+              <div>
+                <div class="text-sm font-medium text-text-primary">{deck}</div>
+                {#if stats}
+                  <div class="text-xs text-text-muted">
+                    {stats.total_in_deck ?? 0} Karten
+                  </div>
+                {/if}
+              </div>
+              {#if stats}
+                <div class="flex gap-4 text-xs">
+                  <div class="text-center">
+                    <div class="font-medium text-blue-400">{stats.new_count ?? 0}</div>
+                    <div class="text-text-muted">Neu</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="font-medium text-amber-400">{stats.learn_count ?? 0}</div>
+                    <div class="text-text-muted">Lernen</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="font-medium text-green-400">{stats.review_count ?? 0}</div>
+                    <div class="text-text-muted">Review</div>
+                  </div>
+                </div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+
+    <!-- Info -->
+    <div class="rounded-xl bg-accent/10 border border-accent/20 p-4">
+      <h4 class="text-sm font-medium text-text-primary">Auto-Sync aktiv</h4>
+      <p class="text-xs text-text-secondary">
+        Anki-Daten werden alle 5 Minuten automatisch synchronisiert. Die Karten-Anzahl wird auch im Widget angezeigt.
       </p>
     </div>
   {/if}

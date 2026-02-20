@@ -6,10 +6,17 @@
   import RetainTab from "./tabs/RetainTab.svelte";
   import StatsTab from "./tabs/StatsTab.svelte";
   import SettingsTab from "./tabs/SettingsTab.svelte";
+  import { loadSettings, getSettings } from "$lib/stores/settingsStore.svelte";
+  import { loadAmbossDays, loadCalendarDays, setCalendarDays, isPlanGenerated, importAmbossPlan } from "$lib/stores/planStore.svelte";
+  import { startPolling } from "$lib/stores/ankiStore.svelte";
+  import { buildStudyPlan } from "$lib/utils/planEngine";
+  import type { AmbossDay } from "$lib/utils/planEngine";
+  import { daysUntil } from "$lib/utils/dateUtils";
 
   type TabId = "today" | "plan" | "subjects" | "anki" | "retain" | "stats" | "settings";
 
   let activeTab = $state<TabId>("today");
+  let initialized = $state(false);
 
   const tabs: { id: TabId; label: string; icon: string }[] = [
     { id: "today", label: "Heute", icon: "📋" },
@@ -20,6 +27,48 @@
     { id: "stats", label: "Statistiken", icon: "📊" },
     { id: "settings", label: "Einstellungen", icon: "⚙️" },
   ];
+
+  let examDaysLeft = $derived(daysUntil(getSettings().examDate));
+
+  $effect(() => {
+    if (!initialized) {
+      initialized = true;
+      initDashboard();
+    }
+  });
+
+  async function initDashboard() {
+    try {
+      await loadSettings();
+      await loadAmbossDays();
+
+      // Try loading persisted calendar from DB first
+      await loadCalendarDays();
+
+      if (!isPlanGenerated()) {
+        // No saved calendar — generate from AMBOSS plan
+        const settings = getSettings();
+        const resp = await fetch("/amboss-plan.json");
+        const days: AmbossDay[] = await resp.json();
+        await importAmbossPlan(days);
+        const calendar = buildStudyPlan(days, {
+          examDate: settings.examDate,
+          semesterEndDate: settings.semesterEndDate,
+          juneVacation: { start: settings.juneVacationStart, end: settings.juneVacationEnd },
+          septVacation: { start: settings.septVacationStart, end: settings.septVacationEnd },
+          weekendsOff: settings.weekendsOff,
+          semesterHoursPerDay: settings.semesterHoursPerDay,
+          fulltimeHoursPerDay: settings.fulltimeHoursPerDay,
+          pharmaPrioritized: settings.pharmaPrioritized,
+        });
+        await setCalendarDays(calendar);
+      }
+
+      startPolling();
+    } catch (err) {
+      console.error("Dashboard init failed:", err);
+    }
+  }
 </script>
 
 <div class="flex h-screen bg-bg-primary">
@@ -48,7 +97,7 @@
     <!-- Bottom info -->
     <div class="border-t border-border px-4 py-3">
       <div class="text-xs text-text-muted">
-        Examen: <span class="text-text-secondary">Okt. 2026</span>
+        Examen: <span class="text-text-secondary">{examDaysLeft > 0 ? `noch ${examDaysLeft} Tage` : "Heute!"}</span>
       </div>
     </div>
   </nav>
