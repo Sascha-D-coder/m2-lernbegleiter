@@ -68,7 +68,7 @@
       "endpoints": [
         "https://github.com/saschadaul/m2-lernbegleiter/releases/latest/download/latest.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU3QjFEOUVBMThDQUM1NTgKUldSWXhjb1k2dG14NTRHUkZmVmtQK2c4N3QxRUdvYzNwd0ZTZkZmL0x1RXBnL3BzeUdYWHM0bFAK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDY2N0IyNEMyRjY4MUY0N0MKUldSODlJSDJ3aVI3WnRNTWRYNlh1ZEZBdHBZTmRNMjFDR0ZGZHNrSlNPZmtvTTQ4ZTNCVlpOT1YK"
     },
     "shell": {
       "open": true
