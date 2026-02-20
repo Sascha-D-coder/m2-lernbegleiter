@@ -1,0 +1,1513 @@
+[
+  {
+    "day_number": 1,
+    "subject": "Innere Medizin",
+    "sub_topic": "Kardiologie I",
+    "chapters": [
+      "Koronare Herzkrankheit",
+      "Akutes Koronarsyndrom",
+      "Myokardinfarkt",
+      "Stabile Angina pectoris"
+    ],
+    "estimated_hours": 8,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 2,
+    "subject": "Innere Medizin",
+    "sub_topic": "Kardiologie II",
+    "chapters": [
+      "Herzinsuffizienz",
+      "Kardiomyopathien",
+      "Myokarditis",
+      "Perikarditis"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 3,
+    "subject": "Innere Medizin",
+    "sub_topic": "Kardiologie III",
+    "chapters": [
+      "Herzrhythmusstörungen",
+      "Vorhofflimmern",
+      "Herzschrittmacher und ICD",
+      "EKG-Diagnostik"
+    ],
+    "estimated_hours": 8,
+    "question_count": 85,
+    "is_optional": false
+  },
+  {
+    "day_number": 4,
+    "subject": "Innere Medizin",
+    "sub_topic": "Kardiologie IV",
+    "chapters": [
+      "Erworbene Herzklappenfehler",
+      "Aortenklappenstenose",
+      "Mitralklappeninsuffizienz",
+      "Endokarditis"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 5,
+    "subject": "Innere Medizin",
+    "sub_topic": "Angiologie & Hypertensiologie",
+    "chapters": [
+      "Arterielle Hypertonie",
+      "Periphere arterielle Verschlusskrankheit",
+      "Aortenaneurysma",
+      "Tiefe Beinvenenthrombose",
+      "Lungenembolie"
+    ],
+    "estimated_hours": 8,
+    "question_count": 90,
+    "is_optional": false
+  },
+  {
+    "day_number": 6,
+    "subject": "Innere Medizin",
+    "sub_topic": "Gastroenterologie I",
+    "chapters": [
+      "Gastroösophageale Refluxkrankheit",
+      "Gastritis",
+      "Magen- und Duodenalulkus",
+      "Magenkarzinom",
+      "Helicobacter pylori"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 7,
+    "subject": "Innere Medizin",
+    "sub_topic": "Gastroenterologie II",
+    "chapters": [
+      "Chronisch-entzündliche Darmerkrankungen",
+      "Morbus Crohn",
+      "Colitis ulcerosa",
+      "Reizdarmsyndrom",
+      "Zöliakie"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 8,
+    "subject": "Innere Medizin",
+    "sub_topic": "Gastroenterologie III",
+    "chapters": [
+      "Kolorektales Karzinom",
+      "Divertikulose und Divertikulitis",
+      "Ileus",
+      "Appendizitis",
+      "Gastrointestinale Blutung"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 9,
+    "subject": "Innere Medizin",
+    "sub_topic": "Hepatologie",
+    "chapters": [
+      "Leberzirrhose",
+      "Hepatitis B und C",
+      "Alkoholische Lebererkrankung",
+      "Hepatozelluläres Karzinom",
+      "Portale Hypertension"
+    ],
+    "estimated_hours": 8,
+    "question_count": 85,
+    "is_optional": false
+  },
+  {
+    "day_number": 10,
+    "subject": "Innere Medizin",
+    "sub_topic": "Pankreas & Gallenwege",
+    "chapters": [
+      "Akute Pankreatitis",
+      "Chronische Pankreatitis",
+      "Pankreaskarzinom",
+      "Cholelithiasis",
+      "Cholezystitis und Cholangitis"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 11,
+    "subject": "Innere Medizin",
+    "sub_topic": "Endokrinologie I",
+    "chapters": [
+      "Diabetes mellitus Typ 1",
+      "Diabetes mellitus Typ 2",
+      "Diabetische Ketoazidose",
+      "Hyperosmolares Koma",
+      "Diabetische Spätschäden"
+    ],
+    "estimated_hours": 8,
+    "question_count": 90,
+    "is_optional": false
+  },
+  {
+    "day_number": 12,
+    "subject": "Innere Medizin",
+    "sub_topic": "Endokrinologie II",
+    "chapters": [
+      "Schilddrüsenerkrankungen",
+      "Hypothyreose",
+      "Hyperthyreose",
+      "Schilddrüsenkarzinom",
+      "Hashimoto-Thyreoiditis",
+      "Morbus Basedow"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 13,
+    "subject": "Innere Medizin",
+    "sub_topic": "Endokrinologie III",
+    "chapters": [
+      "Nebenniere und Nebennierenrinde",
+      "Cushing-Syndrom",
+      "Morbus Addison",
+      "Phäochromozytom",
+      "Hyperaldosteronismus",
+      "Hypophysenerkrankungen"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 14,
+    "subject": "Innere Medizin",
+    "sub_topic": "Nephrologie I",
+    "chapters": [
+      "Akutes Nierenversagen",
+      "Chronische Niereninsuffizienz",
+      "Dialyseverfahren",
+      "Nierentransplantation",
+      "Nephrotisches Syndrom"
+    ],
+    "estimated_hours": 8,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 15,
+    "subject": "Innere Medizin",
+    "sub_topic": "Nephrologie II",
+    "chapters": [
+      "Glomerulonephritiden",
+      "Tubulointerstitielle Nephritis",
+      "Wasser- und Elektrolythaushalt",
+      "Säure-Basen-Haushalt",
+      "Harnwegsinfektionen"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 16,
+    "subject": "Innere Medizin",
+    "sub_topic": "Hämatologie I",
+    "chapters": [
+      "Anämien",
+      "Eisenmangelanämie",
+      "Megaloblastäre Anämie",
+      "Hämolytische Anämien",
+      "Aplastische Anämie"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 17,
+    "subject": "Innere Medizin",
+    "sub_topic": "Hämatologie II & Onkologie I",
+    "chapters": [
+      "Akute Leukämien",
+      "Chronische myeloische Leukämie",
+      "Chronische lymphatische Leukämie",
+      "Myelodysplastisches Syndrom",
+      "Myeloproliferative Neoplasien"
+    ],
+    "estimated_hours": 8,
+    "question_count": 85,
+    "is_optional": false
+  },
+  {
+    "day_number": 18,
+    "subject": "Innere Medizin",
+    "sub_topic": "Onkologie II",
+    "chapters": [
+      "Hodgkin-Lymphom",
+      "Non-Hodgkin-Lymphome",
+      "Multiples Myelom",
+      "Hämostaseologie",
+      "Gerinnungsstörungen"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 19,
+    "subject": "Innere Medizin",
+    "sub_topic": "Pneumologie I",
+    "chapters": [
+      "Asthma bronchiale",
+      "COPD",
+      "Pneumonie",
+      "Ambulant erworbene Pneumonie",
+      "Nosokomiale Pneumonie"
+    ],
+    "estimated_hours": 8,
+    "question_count": 85,
+    "is_optional": false
+  },
+  {
+    "day_number": 20,
+    "subject": "Innere Medizin",
+    "sub_topic": "Pneumologie II",
+    "chapters": [
+      "Bronchialkarzinom",
+      "Tuberkulose",
+      "Sarkoidose",
+      "Interstitielle Lungenerkrankungen",
+      "Pleuraerkrankungen"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 21,
+    "subject": "Innere Medizin",
+    "sub_topic": "Rheumatologie",
+    "chapters": [
+      "Rheumatoide Arthritis",
+      "Systemischer Lupus erythematodes",
+      "Vaskulitiden",
+      "Gicht",
+      "Spondyloarthritiden"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 22,
+    "subject": "Innere Medizin",
+    "sub_topic": "Infektiologie I",
+    "chapters": [
+      "Sepsis",
+      "HIV-Infektion und AIDS",
+      "Sexuell übertragbare Infektionen",
+      "Malaria",
+      "Impfungen"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 23,
+    "subject": "Innere Medizin",
+    "sub_topic": "Infektiologie II & Stoffwechsel",
+    "chapters": [
+      "Tropische Infektionserkrankungen",
+      "Fettstoffwechselstörungen",
+      "Metabolisches Syndrom",
+      "Amyloidose",
+      "Hämochromatose"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 24,
+    "subject": "Chirurgie",
+    "sub_topic": "Allgemeinchirurgie I",
+    "chapters": [
+      "Hernien",
+      "Leistenhernie",
+      "Narbenhernie",
+      "Akutes Abdomen",
+      "Peritonitis"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 25,
+    "subject": "Chirurgie",
+    "sub_topic": "Allgemeinchirurgie II",
+    "chapters": [
+      "Wundheilung und Wundbehandlung",
+      "Chirurgische Infektionen",
+      "Naht- und Knotentechnik",
+      "Prä- und postoperatives Management"
+    ],
+    "estimated_hours": 6,
+    "question_count": 60,
+    "is_optional": false
+  },
+  {
+    "day_number": 26,
+    "subject": "Chirurgie",
+    "sub_topic": "Viszeralchirurgie I",
+    "chapters": [
+      "Ösophaguskarzinom",
+      "Cholezystektomie",
+      "Appendektomie",
+      "Schilddrüsenchirurgie",
+      "Nebenschilddrüsenchirurgie"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 27,
+    "subject": "Chirurgie",
+    "sub_topic": "Viszeralchirurgie II",
+    "chapters": [
+      "Leberchirurgie",
+      "Pankreasoperationen",
+      "Kolonchirurgie",
+      "Rektumkarzinom Chirurgie",
+      "Stomatherapie"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 28,
+    "subject": "Chirurgie",
+    "sub_topic": "Gefäßchirurgie",
+    "chapters": [
+      "Bauchaortenaneurysma",
+      "Karotisstenose",
+      "Periphere arterielle Verschlusskrankheit (chirurgisch)",
+      "Varikosis",
+      "Chronisch-venöse Insuffizienz"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 29,
+    "subject": "Chirurgie",
+    "sub_topic": "Thoraxchirurgie & Herzchirurgie",
+    "chapters": [
+      "Lungenkarzinom (chirurgisch)",
+      "Pneumothorax",
+      "Pleuraempyem",
+      "Koronarer Bypass",
+      "Herzklappenersatz"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 30,
+    "subject": "Chirurgie",
+    "sub_topic": "Kinderchirurgie & Transplantation",
+    "chapters": [
+      "Pylorusstenose",
+      "Invagination",
+      "Morbus Hirschsprung",
+      "Organtransplantation",
+      "Transplantationsimmunologie"
+    ],
+    "estimated_hours": 7,
+    "question_count": 65,
+    "is_optional": false
+  },
+  {
+    "day_number": 31,
+    "subject": "Chirurgie",
+    "sub_topic": "Chirurgische Onkologie & Verbrennungen",
+    "chapters": [
+      "Onkologische Chirurgie Grundlagen",
+      "Sentinel-Lymphknoten-Biopsie",
+      "Verbrennungen",
+      "Plastische Chirurgie Grundlagen",
+      "Hauttransplantation"
+    ],
+    "estimated_hours": 6,
+    "question_count": 60,
+    "is_optional": false
+  },
+  {
+    "day_number": 32,
+    "subject": "Anästhesiologie",
+    "sub_topic": "Allgemeinanästhesie",
+    "chapters": [
+      "Narkoseeinleitung und -führung",
+      "Inhalationsanästhetika",
+      "Intravenöse Anästhetika",
+      "Muskelrelaxanzien",
+      "Atemwegsmanagement"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 33,
+    "subject": "Anästhesiologie",
+    "sub_topic": "Regionalanästhesie & Schmerztherapie",
+    "chapters": [
+      "Spinalanästhesie",
+      "Epiduralanästhesie",
+      "Periphere Nervenblockaden",
+      "Lokalanästhetika",
+      "Perioperative Schmerztherapie"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 34,
+    "subject": "Anästhesiologie",
+    "sub_topic": "Intensivmedizin",
+    "chapters": [
+      "Beatmungstherapie",
+      "Kreislaufunterstützung",
+      "Analgosedierung",
+      "Ernährung auf der Intensivstation",
+      "Delir und Aufwachraum-Management"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 35,
+    "subject": "Augenheilkunde",
+    "sub_topic": "Glaukom & Katarakt",
+    "chapters": [
+      "Offenwinkelglaukom",
+      "Winkelblockglaukom",
+      "Glaukomanfall",
+      "Katarakt",
+      "Kataraktoperation"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 36,
+    "subject": "Augenheilkunde",
+    "sub_topic": "Retina & Sehnerv",
+    "chapters": [
+      "Diabetische Retinopathie",
+      "Altersbedingte Makuladegeneration",
+      "Netzhautablösung",
+      "Retinaler Gefäßverschluss",
+      "Stauungspapille und Papillenödem"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 37,
+    "subject": "Augenheilkunde",
+    "sub_topic": "Vorderer Augenabschnitt & Orbita",
+    "chapters": [
+      "Konjunktivitis",
+      "Keratitis",
+      "Uveitis",
+      "Augenverletzungen",
+      "Endokrine Orbitopathie",
+      "Fehlsichtigkeit und Refraktion"
+    ],
+    "estimated_hours": 6,
+    "question_count": 65,
+    "is_optional": false
+  },
+  {
+    "day_number": 38,
+    "subject": "Dermatologie",
+    "sub_topic": "Infektiöse Dermatosen & Allergologie",
+    "chapters": [
+      "Mykosen der Haut",
+      "Virale Hauterkrankungen",
+      "Bakterielle Hautinfektionen",
+      "Kontaktdermatitis",
+      "Atopisches Ekzem",
+      "Urtikaria"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 39,
+    "subject": "Dermatologie",
+    "sub_topic": "Autoimmundermatosen & entzündliche Dermatosen",
+    "chapters": [
+      "Psoriasis",
+      "Pemphigus vulgaris",
+      "Bullöses Pemphigoid",
+      "Lichen planus",
+      "Dermatitis herpetiformis Duhring"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 40,
+    "subject": "Dermatologie",
+    "sub_topic": "Hauttumoren",
+    "chapters": [
+      "Malignes Melanom",
+      "Basalzellkarzinom",
+      "Plattenepithelkarzinom der Haut",
+      "Aktinische Keratose",
+      "Naevi",
+      "Kutane Lymphome"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 41,
+    "subject": "Gynäkologie & Geburtshilfe",
+    "sub_topic": "Schwangerschaft I",
+    "chapters": [
+      "Schwangerschaftsvorsorge",
+      "Schwangerschaftsdiagnostik",
+      "Gestationsdiabetes",
+      "Hypertensive Schwangerschaftserkrankungen",
+      "Präeklampsie und Eklampsie"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 42,
+    "subject": "Gynäkologie & Geburtshilfe",
+    "sub_topic": "Schwangerschaft II & Geburt",
+    "chapters": [
+      "Regelrechte Geburt",
+      "Geburtskomplikationen",
+      "Sectio caesarea",
+      "Frühgeburt",
+      "Extrauteringravidität",
+      "Abort"
+    ],
+    "estimated_hours": 8,
+    "question_count": 85,
+    "is_optional": false
+  },
+  {
+    "day_number": 43,
+    "subject": "Gynäkologie & Geburtshilfe",
+    "sub_topic": "Wochenbett & Neonatale Erstversorgung",
+    "chapters": [
+      "Wochenbett und Wochenbetterkrankungen",
+      "Postpartale Blutung",
+      "Stillen und Laktation",
+      "Neugeborenen-Erstuntersuchung",
+      "APGAR-Score"
+    ],
+    "estimated_hours": 6,
+    "question_count": 65,
+    "is_optional": false
+  },
+  {
+    "day_number": 44,
+    "subject": "Gynäkologie & Geburtshilfe",
+    "sub_topic": "Gynäkologische Tumoren",
+    "chapters": [
+      "Mammakarzinom",
+      "Ovarialkarzinom",
+      "Zervixkarzinom",
+      "Endometriumkarzinom",
+      "Zervikale intraepitheliale Neoplasie"
+    ],
+    "estimated_hours": 8,
+    "question_count": 85,
+    "is_optional": false
+  },
+  {
+    "day_number": 45,
+    "subject": "Gynäkologie & Geburtshilfe",
+    "sub_topic": "Gynäkologische Erkrankungen",
+    "chapters": [
+      "Endometriose",
+      "Uterus myomatosus",
+      "Menstruationsstörungen",
+      "Kontrazeption",
+      "Deszensus und Harninkontinenz"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 46,
+    "subject": "Hals-Nasen-Ohren-Heilkunde",
+    "sub_topic": "Otologie",
+    "chapters": [
+      "Otitis media",
+      "Otitis externa",
+      "Cholesteatom",
+      "Schwerhörigkeit",
+      "Morbus Menière",
+      "Benigner paroxysmaler Lagerungsschwindel"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 47,
+    "subject": "Hals-Nasen-Ohren-Heilkunde",
+    "sub_topic": "Rhinologie & Sinusologie",
+    "chapters": [
+      "Sinusitis",
+      "Nasenbluten (Epistaxis)",
+      "Nasenseptumdeviation",
+      "Nasenpolypen",
+      "Allergische Rhinitis",
+      "Nasennebenhöhlentumoren"
+    ],
+    "estimated_hours": 6,
+    "question_count": 60,
+    "is_optional": false
+  },
+  {
+    "day_number": 48,
+    "subject": "Hals-Nasen-Ohren-Heilkunde",
+    "sub_topic": "Laryngologie & Pharyngologie",
+    "chapters": [
+      "Tonsillitis und Peritonsillarabszess",
+      "Laryngitis",
+      "Larynxkarzinom",
+      "Stimmbandlähmung (Rekurrensparese)",
+      "Pharynxkarzinom",
+      "Speicheldrüsenerkrankungen"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 49,
+    "subject": "Orthopädie & Unfallchirurgie",
+    "sub_topic": "Frakturen I",
+    "chapters": [
+      "Frakturlehre Grundlagen",
+      "Proximale Femurfraktur",
+      "Femurschaftfraktur",
+      "Distale Radiusfraktur",
+      "Sprunggelenksfrakturen"
+    ],
+    "estimated_hours": 8,
+    "question_count": 85,
+    "is_optional": false
+  },
+  {
+    "day_number": 50,
+    "subject": "Orthopädie & Unfallchirurgie",
+    "sub_topic": "Frakturen II & Gelenkverletzungen",
+    "chapters": [
+      "Schulterluxation",
+      "Klavikulafraktur",
+      "Proximale Humerusfraktur",
+      "Olekranonfraktur",
+      "Kreuzbandruptur",
+      "Meniskusläsion"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 51,
+    "subject": "Orthopädie & Unfallchirurgie",
+    "sub_topic": "Wirbelsäule",
+    "chapters": [
+      "Bandscheibenvorfall",
+      "Spinalkanalstenose",
+      "Wirbelkörperfrakturen",
+      "Skoliose",
+      "Spondylolisthese",
+      "Osteoporose"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 52,
+    "subject": "Orthopädie & Unfallchirurgie",
+    "sub_topic": "Gelenkerkrankungen",
+    "chapters": [
+      "Arthrose",
+      "Koxarthrose",
+      "Gonarthrose",
+      "Endoprothetik",
+      "Septische Arthritis",
+      "Aseptische Knochennekrosen"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 53,
+    "subject": "Orthopädie & Unfallchirurgie",
+    "sub_topic": "Kinderorthopädie & Weichteilverletzungen",
+    "chapters": [
+      "Hüftdysplasie",
+      "Morbus Perthes",
+      "Epiphyseolysis capitis femoris",
+      "Knochentumoren",
+      "Compartment-Syndrom",
+      "Sehnenverletzungen"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 54,
+    "subject": "Neurologie",
+    "sub_topic": "Schlaganfall",
+    "chapters": [
+      "Ischämischer Schlaganfall",
+      "Intrazerebrale Blutung",
+      "Subarachnoidalblutung",
+      "Transitorische ischämische Attacke",
+      "Schlaganfall-Therapie und Sekundärprophylaxe"
+    ],
+    "estimated_hours": 8,
+    "question_count": 85,
+    "is_optional": false
+  },
+  {
+    "day_number": 55,
+    "subject": "Neurologie",
+    "sub_topic": "Epilepsie & Bewusstseinsstörungen",
+    "chapters": [
+      "Epilepsie",
+      "Epileptischer Anfall",
+      "Status epilepticus",
+      "Antikonvulsive Therapie",
+      "Synkope"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 56,
+    "subject": "Neurologie",
+    "sub_topic": "Multiple Sklerose & Autoimmunerkrankungen",
+    "chapters": [
+      "Multiple Sklerose",
+      "Neuromyelitis-optica-Spektrum-Erkrankungen",
+      "Guillain-Barré-Syndrom",
+      "Myasthenia gravis",
+      "Polyneuropathien"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 57,
+    "subject": "Neurologie",
+    "sub_topic": "Neurodegenerative Erkrankungen",
+    "chapters": [
+      "Morbus Parkinson",
+      "Parkinson-Syndrome",
+      "Demenzen",
+      "Morbus Alzheimer",
+      "Amyotrophe Lateralsklerose",
+      "Chorea Huntington"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 58,
+    "subject": "Neurologie",
+    "sub_topic": "Kopfschmerzen & Hirnnerven",
+    "chapters": [
+      "Migräne",
+      "Spannungskopfschmerz",
+      "Clusterkopfschmerz",
+      "Trigeminusneuralgie",
+      "Hirnnervenläsionen",
+      "Fazialisparese"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 59,
+    "subject": "Neurologie",
+    "sub_topic": "ZNS-Infektionen & Tumoren",
+    "chapters": [
+      "Bakterielle Meningitis",
+      "Virale Meningitis und Enzephalitis",
+      "Hirnabszess",
+      "Hirntumoren",
+      "Glioblastom",
+      "Meningeom"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 60,
+    "subject": "Psychiatrie",
+    "sub_topic": "Affektive Störungen",
+    "chapters": [
+      "Depression",
+      "Bipolare Störung",
+      "Antidepressiva",
+      "Suizidalität",
+      "Dysthymie und Zyklothymie"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 61,
+    "subject": "Psychiatrie",
+    "sub_topic": "Schizophrenie & Psychosen",
+    "chapters": [
+      "Schizophrenie",
+      "Schizoaffektive Störung",
+      "Wahnhafte Störung",
+      "Antipsychotika",
+      "Malignes neuroleptisches Syndrom"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 62,
+    "subject": "Psychiatrie",
+    "sub_topic": "Angst- und Zwangsstörungen",
+    "chapters": [
+      "Generalisierte Angststörung",
+      "Panikstörung",
+      "Phobien",
+      "Zwangsstörung",
+      "Posttraumatische Belastungsstörung",
+      "Anxiolytika und Benzodiazepine"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 63,
+    "subject": "Psychiatrie",
+    "sub_topic": "Suchterkrankungen & weitere Störungen",
+    "chapters": [
+      "Alkoholabhängigkeit",
+      "Alkoholentzugssyndrom",
+      "Drogenabhängigkeit",
+      "Essstörungen",
+      "Persönlichkeitsstörungen",
+      "Somatoforme Störungen"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 64,
+    "subject": "Pädiatrie",
+    "sub_topic": "Neonatologie",
+    "chapters": [
+      "Neugeborenenikterus",
+      "Atemnotsyndrom des Neugeborenen",
+      "Nekrotisierende Enterokolitis",
+      "Neonatale Sepsis",
+      "Frühgeborene"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 65,
+    "subject": "Pädiatrie",
+    "sub_topic": "Pädiatrische Infektionskrankheiten",
+    "chapters": [
+      "Masern",
+      "Röteln",
+      "Varizellen",
+      "Scharlach",
+      "Pertussis",
+      "Pädiatrischer Impfkalender"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 66,
+    "subject": "Pädiatrie",
+    "sub_topic": "Pädiatrische Entwicklung & Genetik",
+    "chapters": [
+      "Kindliche Entwicklung und Vorsorgeuntersuchungen",
+      "Down-Syndrom (Trisomie 21)",
+      "Turner-Syndrom",
+      "Mukoviszidose",
+      "Phenylketonurie"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 67,
+    "subject": "Pädiatrie",
+    "sub_topic": "Pädiatrische Erkrankungen I",
+    "chapters": [
+      "Kawasaki-Syndrom",
+      "Fieberkrampf",
+      "Pseudokrupp",
+      "Epiglottitis",
+      "Pädiatrische Notfälle"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 68,
+    "subject": "Pädiatrie",
+    "sub_topic": "Pädiatrische Erkrankungen II",
+    "chapters": [
+      "Angeborene Herzfehler",
+      "Pylorusstenose des Säuglings",
+      "Hodenhochstand",
+      "Kindesmisshandlung",
+      "Plötzlicher Kindstod"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 69,
+    "subject": "Radiologie",
+    "sub_topic": "Bildgebende Verfahren",
+    "chapters": [
+      "Konventionelles Röntgen",
+      "Computertomografie",
+      "Magnetresonanztomografie",
+      "Sonografie",
+      "Kontrastmittel und Kontrastmittelreaktionen"
+    ],
+    "estimated_hours": 7,
+    "question_count": 65,
+    "is_optional": false
+  },
+  {
+    "day_number": 70,
+    "subject": "Radiologie",
+    "sub_topic": "Interventionelle Radiologie & Nuklearmedizin",
+    "chapters": [
+      "Interventionelle Radiologie",
+      "Angiografie",
+      "Nuklearmedizinische Diagnostik",
+      "Szintigrafie",
+      "PET-CT",
+      "Strahlenschutz"
+    ],
+    "estimated_hours": 6,
+    "question_count": 60,
+    "is_optional": false
+  },
+  {
+    "day_number": 71,
+    "subject": "Notfallmedizin",
+    "sub_topic": "Reanimation & Schock",
+    "chapters": [
+      "Kardiopulmonale Reanimation",
+      "Advanced Life Support",
+      "Schock",
+      "Anaphylaktischer Schock",
+      "Septischer Schock",
+      "Kardiogener Schock"
+    ],
+    "estimated_hours": 8,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 72,
+    "subject": "Notfallmedizin",
+    "sub_topic": "Polytrauma & Vergiftungen",
+    "chapters": [
+      "Polytrauma-Management",
+      "Schädel-Hirn-Trauma",
+      "Thoraxtrauma",
+      "Vergiftungen und Intoxikationen",
+      "Hypothermie und Hyperthermie",
+      "Ertrinken"
+    ],
+    "estimated_hours": 8,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 73,
+    "subject": "Urologie",
+    "sub_topic": "Urologische Tumoren",
+    "chapters": [
+      "Nierenzellkarzinom",
+      "Urothelkarzinom (Harnblasenkarzinom)",
+      "Prostatakarzinom",
+      "Hodentumoren",
+      "Peniskarzinom"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 74,
+    "subject": "Urologie",
+    "sub_topic": "Urologische Erkrankungen",
+    "chapters": [
+      "Benigne Prostatahyperplasie",
+      "Urolithiasis",
+      "Nierenkolik",
+      "Harnverhalt",
+      "Hodentorsion",
+      "Phimose und Paraphimose"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 75,
+    "subject": "Pharmakologie",
+    "sub_topic": "Autonomes Nervensystem",
+    "chapters": [
+      "Sympathomimetika",
+      "Sympatholytika",
+      "Parasympathomimetika",
+      "Parasympatholytika",
+      "Pharmakologische Grundlagen"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 76,
+    "subject": "Pharmakologie",
+    "sub_topic": "Herz-Kreislauf-Pharmaka",
+    "chapters": [
+      "Antihypertensiva",
+      "ACE-Hemmer und AT1-Blocker",
+      "Betablocker",
+      "Calciumkanalblocker",
+      "Diuretika",
+      "Antiarrhythmika"
+    ],
+    "estimated_hours": 8,
+    "question_count": 90,
+    "is_optional": false
+  },
+  {
+    "day_number": 77,
+    "subject": "Pharmakologie",
+    "sub_topic": "Antibiotika & Antimykotika",
+    "chapters": [
+      "Penicilline und Cephalosporine",
+      "Fluorchinolone",
+      "Makrolide",
+      "Aminoglykoside",
+      "Glykopeptide und Carbapeneme",
+      "Antimykotika"
+    ],
+    "estimated_hours": 8,
+    "question_count": 85,
+    "is_optional": false
+  },
+  {
+    "day_number": 78,
+    "subject": "Pharmakologie",
+    "sub_topic": "Analgetika & Anästhetika",
+    "chapters": [
+      "Nicht-steroidale Antirheumatika (NSAR)",
+      "Paracetamol und Metamizol",
+      "Opioide",
+      "Glucocorticoide",
+      "WHO-Stufenschema der Schmerztherapie"
+    ],
+    "estimated_hours": 7,
+    "question_count": 80,
+    "is_optional": false
+  },
+  {
+    "day_number": 79,
+    "subject": "Pharmakologie",
+    "sub_topic": "Psychopharmaka",
+    "chapters": [
+      "Selektive Serotonin-Wiederaufnahmehemmer (SSRI)",
+      "Trizyklische Antidepressiva",
+      "Neuroleptika",
+      "Benzodiazepine",
+      "Lithium",
+      "Stimmungsstabilisierer"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 80,
+    "subject": "Pharmakologie",
+    "sub_topic": "Immunsuppressiva & Antikoagulanzien",
+    "chapters": [
+      "Immunsuppressiva",
+      "Zytostatika Grundlagen",
+      "Heparine",
+      "Vitamin-K-Antagonisten",
+      "Direkte orale Antikoagulanzien (DOAK)",
+      "Thrombozytenaggregationshemmer"
+    ],
+    "estimated_hours": 8,
+    "question_count": 85,
+    "is_optional": false
+  },
+  {
+    "day_number": 81,
+    "subject": "Klinische Chemie & Labormedizin",
+    "sub_topic": "Labordiagnostik I",
+    "chapters": [
+      "Blutbild und Differenzialblutbild",
+      "Entzündungsparameter",
+      "Leber- und Cholestaseparameter",
+      "Nierenfunktionsparameter",
+      "Elektrolyte und Blutgase"
+    ],
+    "estimated_hours": 7,
+    "question_count": 75,
+    "is_optional": false
+  },
+  {
+    "day_number": 82,
+    "subject": "Klinische Chemie & Labormedizin",
+    "sub_topic": "Labordiagnostik II",
+    "chapters": [
+      "Gerinnung und Gerinnungsdiagnostik",
+      "Tumormarker",
+      "Herzenzyme und kardiale Biomarker",
+      "Schilddrüsendiagnostik",
+      "Liquordiagnostik",
+      "Urindiagnostik"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": false
+  },
+  {
+    "day_number": 83,
+    "subject": "Rechtsmedizin",
+    "sub_topic": "Rechtsmedizin",
+    "chapters": [
+      "Leichenschau und Todesfeststellung",
+      "Todesarten und Todesursachen",
+      "Forensische Traumatologie",
+      "Vergiftungen in der Rechtsmedizin",
+      "Ärztliche Schweigepflicht",
+      "Patientenverfügung und Betreuungsrecht"
+    ],
+    "estimated_hours": 7,
+    "question_count": 65,
+    "is_optional": false
+  },
+  {
+    "day_number": 84,
+    "subject": "Arbeitsmedizin & Hygiene",
+    "sub_topic": "Arbeits- & Sozialmedizin",
+    "chapters": [
+      "Berufskrankheiten",
+      "Arbeitsschutz",
+      "Arbeitsunfähigkeit und Rehabilitation",
+      "Sozialmedizinische Begutachtung",
+      "Krankenhaushygiene",
+      "Epidemiologie und Prävention"
+    ],
+    "estimated_hours": 7,
+    "question_count": 65,
+    "is_optional": false
+  },
+  {
+    "day_number": 85,
+    "subject": "Allgemeinmedizin",
+    "sub_topic": "Allgemeinmedizin & Palliativmedizin",
+    "chapters": [
+      "Hausärztliche Versorgung",
+      "Disease-Management-Programme",
+      "Evidenzbasierte Medizin",
+      "Palliativmedizin",
+      "Schmerztherapie am Lebensende",
+      "Ethik in der Medizin"
+    ],
+    "estimated_hours": 7,
+    "question_count": 60,
+    "is_optional": false
+  },
+  {
+    "day_number": 86,
+    "subject": "Mikrobiologie",
+    "sub_topic": "Bakteriologie",
+    "chapters": [
+      "Grampositive Kokken (Staphylokokken, Streptokokken)",
+      "Gramnegative Stäbchen (Enterobacteriaceae)",
+      "Anaerobe Bakterien",
+      "Mykobakterien",
+      "Multiresistente Erreger (MRSA, VRE, MRGN)"
+    ],
+    "estimated_hours": 7,
+    "question_count": 70,
+    "is_optional": true
+  },
+  {
+    "day_number": 87,
+    "subject": "Mikrobiologie",
+    "sub_topic": "Virologie & Parasitologie",
+    "chapters": [
+      "Hepatitisviren",
+      "Herpesviren",
+      "Influenzaviren",
+      "SARS-CoV-2",
+      "Protozoen (Toxoplasma, Plasmodium)",
+      "Helminthen"
+    ],
+    "estimated_hours": 7,
+    "question_count": 65,
+    "is_optional": true
+  },
+  {
+    "day_number": 88,
+    "subject": "Mikrobiologie",
+    "sub_topic": "Mykologie & Infektionsprävention",
+    "chapters": [
+      "Pilzinfektionen (Candida, Aspergillus)",
+      "Antibiotikatherapie Grundsätze",
+      "Antibiotic Stewardship",
+      "Nosokomiale Infektionen",
+      "Desinfektions- und Sterilisationsverfahren"
+    ],
+    "estimated_hours": 6,
+    "question_count": 55,
+    "is_optional": true
+  },
+  {
+    "day_number": 89,
+    "subject": "Wiederholung",
+    "sub_topic": "Wiederholung Innere Medizin (Schwerpunkte)",
+    "chapters": [
+      "Kardiologie-Wiederholung",
+      "Gastroenterologie-Wiederholung",
+      "Endokrinologie-Wiederholung",
+      "Nephrologie-Wiederholung"
+    ],
+    "estimated_hours": 8,
+    "question_count": 100,
+    "is_optional": true
+  },
+  {
+    "day_number": 90,
+    "subject": "Wiederholung",
+    "sub_topic": "Wiederholung Innere Medizin & Chirurgie",
+    "chapters": [
+      "Hämatologie/Onkologie-Wiederholung",
+      "Pneumologie-Wiederholung",
+      "Chirurgie-Wiederholung (schwierige Themen)"
+    ],
+    "estimated_hours": 8,
+    "question_count": 100,
+    "is_optional": true
+  },
+  {
+    "day_number": 91,
+    "subject": "Wiederholung",
+    "sub_topic": "Wiederholung Neurologie & Psychiatrie",
+    "chapters": [
+      "Schlaganfall-Wiederholung",
+      "Epilepsie-Wiederholung",
+      "Multiple Sklerose-Wiederholung",
+      "Psychiatrie-Wiederholung (schwierige Themen)"
+    ],
+    "estimated_hours": 8,
+    "question_count": 100,
+    "is_optional": true
+  },
+  {
+    "day_number": 92,
+    "subject": "Wiederholung",
+    "sub_topic": "Wiederholung Pädiatrie & Gynäkologie",
+    "chapters": [
+      "Neonatologie-Wiederholung",
+      "Pädiatrische Infektionen-Wiederholung",
+      "Schwangerschaftskomplikationen-Wiederholung",
+      "Gynäkologische Tumoren-Wiederholung"
+    ],
+    "estimated_hours": 8,
+    "question_count": 100,
+    "is_optional": true
+  },
+  {
+    "day_number": 93,
+    "subject": "Wiederholung",
+    "sub_topic": "Wiederholung Pharmakologie & Querschnittsfächer",
+    "chapters": [
+      "Pharmakologie-Wiederholung (Schwerpunkte)",
+      "Labordiagnostik-Wiederholung",
+      "Radiologie-Wiederholung",
+      "Notfallmedizin-Wiederholung"
+    ],
+    "estimated_hours": 8,
+    "question_count": 100,
+    "is_optional": true
+  },
+  {
+    "day_number": 94,
+    "subject": "Wiederholung",
+    "sub_topic": "Wiederholung Kleine Fächer",
+    "chapters": [
+      "Augenheilkunde-Wiederholung",
+      "HNO-Wiederholung",
+      "Dermatologie-Wiederholung",
+      "Orthopädie/Unfallchirurgie-Wiederholung",
+      "Urologie-Wiederholung"
+    ],
+    "estimated_hours": 8,
+    "question_count": 100,
+    "is_optional": true
+  },
+  {
+    "day_number": 95,
+    "subject": "Wiederholung",
+    "sub_topic": "Schwierige Themen & Lücken schließen",
+    "chapters": [
+      "Individuelle Schwachstellen bearbeiten",
+      "Häufig geprüfte Themen wiederholen",
+      "Fallbasiertes Lernen",
+      "Differentialdiagnostik-Training"
+    ],
+    "estimated_hours": 8,
+    "question_count": 100,
+    "is_optional": true
+  },
+  {
+    "day_number": 96,
+    "subject": "Generalprobe",
+    "sub_topic": "Probe-Examen Tag 1",
+    "chapters": [
+      "Examenssimulation Tag 1 (160 Fragen, 5 Stunden)",
+      "Innere Medizin, Chirurgie, Pharmakologie",
+      "Zeitmanagement üben"
+    ],
+    "estimated_hours": 8,
+    "question_count": 160,
+    "is_optional": true
+  },
+  {
+    "day_number": 97,
+    "subject": "Generalprobe",
+    "sub_topic": "Auswertung Probe-Examen Tag 1",
+    "chapters": [
+      "Fehleranalyse Tag 1",
+      "Schwachstellen identifizieren",
+      "Gezieltes Nacharbeiten"
+    ],
+    "estimated_hours": 6,
+    "question_count": 40,
+    "is_optional": true
+  },
+  {
+    "day_number": 98,
+    "subject": "Generalprobe",
+    "sub_topic": "Probe-Examen Tag 2",
+    "chapters": [
+      "Examenssimulation Tag 2 (160 Fragen, 5 Stunden)",
+      "Neurologie, Pädiatrie, Gynäkologie, Kleine Fächer",
+      "Zeitmanagement üben"
+    ],
+    "estimated_hours": 8,
+    "question_count": 160,
+    "is_optional": true
+  },
+  {
+    "day_number": 99,
+    "subject": "Generalprobe",
+    "sub_topic": "Auswertung Probe-Examen Tag 2",
+    "chapters": [
+      "Fehleranalyse Tag 2",
+      "Letzte Schwachstellen bearbeiten",
+      "Gezieltes Nacharbeiten"
+    ],
+    "estimated_hours": 6,
+    "question_count": 40,
+    "is_optional": true
+  },
+  {
+    "day_number": 100,
+    "subject": "Generalprobe",
+    "sub_topic": "Letzte Vorbereitung & Prüfungsvorbereitung",
+    "chapters": [
+      "Letzte Wiederholung der wichtigsten Themen",
+      "Prüfungsorganisation und -vorbereitung",
+      "Mentale Vorbereitung",
+      "Examenstipps und Strategien"
+    ],
+    "estimated_hours": 4,
+    "question_count": 0,
+    "is_optional": true
+  }
+]
