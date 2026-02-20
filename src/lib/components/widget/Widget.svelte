@@ -4,6 +4,7 @@
   import { getTodayCalendarDay, getTodayAmbossDay, getProgressPercent, getCurrentDayNumber, getTotalStudyDays, isPlanGenerated, loadAmbossDays, setCalendarDays } from "$lib/stores/planStore.svelte";
   import { loadSettings, getSettings } from "$lib/stores/settingsStore.svelte";
   import { getCardsDueCount_, startPolling } from "$lib/stores/ankiStore.svelte";
+  import { initNotifications, stopNotifications } from "$lib/services/notificationService";
   import { buildStudyPlan } from "$lib/utils/planEngine";
   import type { AmbossDay } from "$lib/utils/planEngine";
   import { getDb } from "$lib/api/db";
@@ -65,9 +66,17 @@
     }
 
     startPolling();
+    initNotifications();
     await loadStreak();
     await loadTodayProgress();
   }
+
+  // Cleanup notification polling when component is destroyed
+  $effect(() => {
+    return () => {
+      stopNotifications();
+    };
+  });
 
   async function loadStreak() {
     try {

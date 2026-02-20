@@ -4,26 +4,6 @@ use tauri::{
     Manager,
 };
 
-mod db;
-
-#[tauri::command]
-fn get_today_summary() -> String {
-    // Placeholder - will be replaced with real DB query
-    serde_json::json!({
-        "day_number": 1,
-        "total_days": 88,
-        "subject": "Pharmakologie",
-        "sub_topic": "Grundlagen",
-        "progress_percent": 0,
-        "anki_due": 0,
-        "streak": 0,
-        "reading_done": false,
-        "kreuzen_done": false,
-        "kreuzen_target": 80
-    })
-    .to_string()
-}
-
 #[tauri::command]
 async fn toggle_dashboard(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("dashboard") {
@@ -79,7 +59,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![get_today_summary, toggle_dashboard])
+        .invoke_handler(tauri::generate_handler![toggle_dashboard])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

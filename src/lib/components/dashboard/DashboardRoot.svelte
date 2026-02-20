@@ -9,6 +9,7 @@
   import { loadSettings, getSettings } from "$lib/stores/settingsStore.svelte";
   import { loadAmbossDays, loadCalendarDays, setCalendarDays, isPlanGenerated, importAmbossPlan } from "$lib/stores/planStore.svelte";
   import { startPolling } from "$lib/stores/ankiStore.svelte";
+  import { initNotifications, stopNotifications } from "$lib/services/notificationService";
   import { buildStudyPlan } from "$lib/utils/planEngine";
   import type { AmbossDay } from "$lib/utils/planEngine";
   import { daysUntil } from "$lib/utils/dateUtils";
@@ -65,10 +66,18 @@
       }
 
       startPolling();
+      initNotifications();
     } catch (err) {
       console.error("Dashboard init failed:", err);
     }
   }
+
+  // Cleanup notification polling when component is destroyed
+  $effect(() => {
+    return () => {
+      stopNotifications();
+    };
+  });
 </script>
 
 <div class="flex h-screen bg-bg-primary">
