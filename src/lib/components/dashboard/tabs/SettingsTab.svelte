@@ -3,6 +3,7 @@
   import { setCalendarDays, importAmbossPlan, getAmbossDays } from "$lib/stores/planStore.svelte";
   import { buildStudyPlan } from "$lib/utils/planEngine";
   import type { AmbossDay } from "$lib/utils/planEngine";
+  import { toastSuccess, toastError } from "$lib/stores/toastStore.svelte";
 
   let loaded = $derived(isLoaded());
   let settings = $derived(getSettings());
@@ -161,7 +162,9 @@
         pharmaPrioritized: pharmaPriority,
       });
       setCalendarDays(calendar);
+      toastSuccess("Lernplan erfolgreich neu generiert!");
     } catch (error) {
+      toastError("Plan-Generierung fehlgeschlagen!");
       console.error("Failed to regenerate plan:", error);
     }
     regenerating = false;
@@ -212,7 +215,7 @@
         <label for="examDate" class="text-xs font-medium text-text-muted mb-1.5 block">Erster Klausurtag</label>
         <input id="examDate" type="date" bind:value={examDate}
           class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
-        <p class="text-[10px] text-text-muted mt-1">M2 2026: 6.–8. Oktober</p>
+        <p class="text-[10px] text-text-muted mt-1">M2 2026: 06.10.26–08.10.26</p>
       </div>
       <div>
         <label for="semesterEnd" class="text-xs font-medium text-text-muted mb-1.5 block">Semesterende</label>

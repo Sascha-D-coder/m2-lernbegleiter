@@ -14,7 +14,7 @@
   let planReady = $derived(isPlanGenerated());
   let calendarDays = $derived(getCalendarDays());
 
-  // Determine the plan status (mirrors Widget.svelte logic)
+  // Determine the plan status
   let planStatus = $derived.by(() => {
     if (!planReady) return { type: "no-plan" as const };
 
@@ -35,8 +35,10 @@
       const firstDate = calendarDays[0].date;
       if (todayStr < firstDate) {
         const d = new Date(firstDate + "T00:00:00");
-        const formatted = d.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
-        return { type: "not-started" as const, message: `Dein Plan startet am ${formatted}` };
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const year = String(d.getFullYear()).slice(-2);
+        return { type: "not-started" as const, message: `Dein Plan startet am ${day}.${month}.${year}` };
       }
       return { type: "free-day" as const, message: "Plan abgeschlossen" };
     }
@@ -50,6 +52,7 @@
   let kreuzenCorrect = $state(0);
   let kreuzenTotal = $state(0);
   let streak = $state(0);
+  let showConfetti = $state(false);
 
   // Load progress from DB on mount
   $effect(() => {
@@ -81,14 +84,28 @@
     }
   }
 
+  function triggerConfetti() {
+    showConfetti = true;
+    setTimeout(() => { showConfetti = false; }, 3000);
+  }
+
+  // Check if today is fully completed -> show confetti
+  function checkDayComplete() {
+    if (readingDone && kreuzenDone) {
+      triggerConfetti();
+    }
+  }
+
   async function toggleReading() {
     readingDone = !readingDone;
     await saveProgress();
+    if (readingDone) checkDayComplete();
   }
 
   async function toggleKreuzen() {
     kreuzenDone = !kreuzenDone;
     await saveProgress();
+    if (kreuzenDone) checkDayComplete();
   }
 
   async function saveProgress() {
@@ -183,11 +200,50 @@
   }
 </script>
 
+<!-- Confetti Overlay -->
+{#if showConfetti}
+  <div class="fixed inset-0 pointer-events-none z-50 overflow-hidden" aria-hidden="true">
+    {#each Array(60) as _, i}
+      {@const left = Math.random() * 100}
+      {@const delay = Math.random() * 0.5}
+      {@const duration = 2 + Math.random() * 2}
+      {@const size = 6 + Math.random() * 8}
+      {@const hue = Math.random() * 360}
+      {@const rotation = Math.random() * 360}
+      <div
+        class="absolute confetti-piece"
+        style="
+          left: {left}%;
+          top: -10px;
+          width: {size}px;
+          height: {size * 0.6}px;
+          background: hsl({hue}, 80%, 60%);
+          animation: confetti-fall {duration}s ease-in {delay}s forwards;
+          transform: rotate({rotation}deg);
+          border-radius: 2px;
+        "
+      ></div>
+    {/each}
+  </div>
+{/if}
+
+<style>
+  @keyframes confetti-fall {
+    0% {
+      transform: translateY(0) rotate(0deg) scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh) rotate(720deg) scale(0.5);
+      opacity: 0;
+    }
+  }
+</style>
+
 <div class="space-y-6">
   {#if planStatus.type === "no-plan"}
-    <!-- No plan generated yet -->
     <div class="rounded-xl bg-bg-secondary border border-border p-8 text-center">
-      <div class="text-4xl mb-4">📋</div>
+      <div class="text-4xl mb-4">&#128203;</div>
       <h2 class="text-xl font-bold text-text-primary mb-2">Kein Plan generiert</h2>
       <p class="text-sm text-text-secondary mb-4">
         Du hast noch keinen Lernplan erstellt. Gehe zum <span class="font-medium text-accent">Plan</span>-Tab, um deinen Studienplan zu generieren.
@@ -195,9 +251,8 @@
     </div>
 
   {:else if planStatus.type === "not-started"}
-    <!-- Plan exists but hasn't started yet -->
     <div class="rounded-xl bg-bg-secondary border border-border p-8 text-center">
-      <div class="text-4xl mb-4">📅</div>
+      <div class="text-4xl mb-4">&#128197;</div>
       <h2 class="text-xl font-bold text-text-primary mb-2">{planStatus.message}</h2>
       <p class="text-sm text-text-secondary mb-4">
         Dein Lernplan ist erstellt. Nutze die Zeit bis dahin, um dich vorzubereiten.
@@ -205,7 +260,6 @@
     </div>
 
   {:else if planStatus.type === "free-day"}
-    <!-- Free day (weekend, vacation, exam-prep) -->
     <div>
       <h2 class="text-2xl font-bold text-text-primary">Heute</h2>
       <p class="text-sm text-text-secondary">
@@ -214,10 +268,9 @@
     </div>
 
     {#if todayCalDay?.phase === "exam-prep"}
-      <!-- Exam prep: Probeklausuren only -->
       <div class="rounded-xl bg-red-500/10 border border-red-500/20 p-6">
         <div class="text-center mb-4">
-          <div class="text-3xl mb-2">📝</div>
+          <div class="text-3xl mb-2">&#128221;</div>
           <h3 class="text-lg font-semibold text-text-primary">Probeklausuren-Phase</h3>
           <p class="text-sm text-text-secondary mt-1">
             Nur AMBOSS-Probeklausuren. Keine neuen Themen, keine Wiederholungen.
@@ -229,7 +282,7 @@
           class="w-full rounded-lg bg-red-500/15 border border-red-500/30 px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-500/25 transition-colors cursor-pointer group"
         >
           <div class="flex items-center justify-center gap-2">
-            📝 AMBOSS-Probeklausur starten
+            AMBOSS-Probeklausur starten
             <svg class="w-4 h-4 text-red-400/60 group-hover:text-red-400 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           </div>
           <p class="text-xs text-red-400/60 mt-1">Öffnet AMBOSS-Examen im Browser</p>
@@ -239,9 +292,9 @@
       <div class="rounded-xl bg-bg-secondary border border-border p-6 text-center">
         <div class="text-3xl mb-3">
           {#if todayCalDay?.phase === "weekend"}
-            ☀️
+            &#9728;&#65039;
           {:else}
-            🏖️
+            &#127958;&#65039;
           {/if}
         </div>
         <h3 class="text-lg font-semibold text-text-primary mb-1">{planStatus.message}</h3>
@@ -249,7 +302,6 @@
       </div>
     {/if}
 
-    <!-- Anki & Streak on free days -->
     <div class="grid grid-cols-3 gap-4">
       <div class="rounded-xl bg-bg-secondary border border-border p-4 text-center">
         <div class="text-2xl font-bold text-text-primary">{ankiDue}</div>
@@ -268,7 +320,6 @@
   {:else}
     <!-- study-day: Normal study day with AMBOSS content -->
 
-    <!-- Header -->
     <div>
       <h2 class="text-2xl font-bold text-text-primary">Heute</h2>
       <p class="text-sm text-text-secondary">
@@ -277,7 +328,6 @@
       </p>
     </div>
 
-    <!-- Subject Hero -->
     {#if todayAmboss}
       <div class="rounded-xl bg-bg-secondary border border-border p-5">
         <div class="flex items-start justify-between">
@@ -315,7 +365,6 @@
           </div>
         {/if}
 
-        <!-- Split info -->
         {#if todayCalDay?.splitPart === 'reading'}
           <div class="mt-3">
             <span class="inline-block rounded-md bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
@@ -353,7 +402,8 @@
         <!-- Reading Card -->
         <button
           onclick={() => openAmbossChapter(todayAmboss!.chapters[0] ?? todayAmboss!.subject)}
-          class="rounded-xl bg-bg-secondary border border-border p-4 text-left transition-colors hover:border-accent/40 cursor-pointer group"
+          class="rounded-xl bg-bg-secondary border border-border p-4 text-left transition-colors hover:border-accent/40 cursor-pointer group
+            {readingDone ? 'border-success/40 bg-success/5' : ''}"
         >
           <div class="flex items-center justify-between">
             <h4 class="text-sm font-medium text-text-primary flex items-center gap-1.5">
@@ -370,14 +420,15 @@
             </label>
           </div>
           <p class="mt-2 text-xs text-text-muted">
-            {readingDone ? "Erledigt!" : "Klicken → AMBOSS-Kapitel öffnen"}
+            {readingDone ? "Erledigt!" : "Klicken \u2192 AMBOSS-Kapitel öffnen"}
           </p>
         </button>
 
         <!-- Kreuzen Card -->
         <button
           onclick={openAmbossKreuzen}
-          class="rounded-xl bg-bg-secondary border border-border p-4 text-left transition-colors hover:border-accent/40 cursor-pointer group"
+          class="rounded-xl bg-bg-secondary border border-border p-4 text-left transition-colors hover:border-accent/40 cursor-pointer group
+            {kreuzenDone ? 'border-success/40 bg-success/5' : ''}"
         >
           <div class="flex items-center justify-between">
             <h4 class="text-sm font-medium text-text-primary flex items-center gap-1.5">
@@ -399,11 +450,20 @@
             </p>
           {:else}
             <p class="mt-2 text-xs text-text-muted">
-              {kreuzenDone ? "Erledigt!" : "Klicken → AMBOSS-Kreuzsitzung öffnen"}
+              {kreuzenDone ? "Erledigt!" : "Klicken \u2192 AMBOSS-Kreuzsitzung öffnen"}
             </p>
           {/if}
         </button>
       </div>
+
+      <!-- Day Complete Banner -->
+      {#if readingDone && kreuzenDone}
+        <div class="rounded-xl bg-success/10 border border-success/20 p-4 text-center">
+          <div class="text-2xl mb-1">&#127881;</div>
+          <h4 class="text-sm font-semibold text-success">Tag geschafft!</h4>
+          <p class="text-xs text-text-secondary mt-1">Vergiss nicht deine Anki-Karten zu machen.</p>
+        </div>
+      {/if}
     {/if}
 
     <!-- Anki & Streak -->

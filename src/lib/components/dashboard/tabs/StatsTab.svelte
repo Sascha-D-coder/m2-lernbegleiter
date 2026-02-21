@@ -2,7 +2,7 @@
   import { getCalendarDays, getTotalStudyDays, getProgressPercent, isPlanGenerated, getAmbossDays } from "$lib/stores/planStore.svelte";
   import { getTestHistory, loadTestHistory, getMasteryMap, loadMastery, getMasteryLevel } from "$lib/stores/retainStore.svelte";
   import { getDb } from "$lib/api/db";
-  import { daysUntil } from "$lib/utils/dateUtils";
+  import { daysUntil, formatISODateShort } from "$lib/utils/dateUtils";
   import { getSettings } from "$lib/stores/settingsStore.svelte";
 
   let recentActivity = $state<{date: string; subject: string; kreuzenCorrect: number; kreuzenTotal: number; studyHours: number}[]>([]);
@@ -154,17 +154,15 @@
 
   function formatDate(dateStr: string): string {
     try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+      return formatISODateShort(dateStr);
     } catch {
       return dateStr;
     }
   }
 
-  function formatDateLong(dateStr: string): string {
+  function formatDateLongLocal(dateStr: string): string {
     try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+      return formatISODateShort(dateStr);
     } catch {
       return dateStr;
     }
@@ -206,7 +204,7 @@
       <div class="rounded-xl bg-bg-secondary border border-border p-4">
         <div class="text-xs text-text-muted mb-1">Tage bis Examen</div>
         <div class="text-2xl font-bold text-text-primary">{examDaysLeft}</div>
-        <div class="text-[10px] text-text-muted mt-0.5">{settings.examDate}</div>
+        <div class="text-[10px] text-text-muted mt-0.5">{formatISODateShort(settings.examDate)}</div>
       </div>
 
       <!-- Progress -->
@@ -365,7 +363,7 @@
           {#each recentTests as test}
             <div class="flex items-center justify-between rounded-lg bg-bg-primary border border-border/50 px-3 py-2">
               <div class="flex items-center gap-3 min-w-0">
-                <div class="text-xs font-mono text-text-muted shrink-0">{formatDateLong(test.startedAt)}</div>
+                <div class="text-xs font-mono text-text-muted shrink-0">{formatDateLongLocal(test.startedAt)}</div>
                 <div class="text-sm text-text-secondary truncate">
                   {test.subject ?? test.scope}
                 </div>

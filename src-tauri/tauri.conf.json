@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "M2 Lernbegleiter",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "identifier": "com.m2lernbegleiter.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -66,12 +66,19 @@
     "notification": null,
     "updater": {
       "endpoints": [
-        "https://github.com/saschadaul/m2-lernbegleiter/releases/latest/download/latest.json"
+        "https://github.com/Sascha-D-coder/m2-lernbegleiter/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFBMTI2Q0NDQzEzRjk3MzYKUldRMmx6L0J6R3dTcW9ucmNuVEo4aUl4Z2lRVE1ReUJXQXBVUVkrbk45Nk1pQUpTTllZZ2V6cUIK"
     },
     "shell": {
-      "open": true
+      "open": true,
+      "scope": [
+        {
+          "name": "curl",
+          "cmd": "curl",
+          "args": true
+        }
+      ]
     }
   }
 }

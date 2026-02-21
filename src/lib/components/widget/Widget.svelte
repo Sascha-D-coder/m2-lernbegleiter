@@ -53,8 +53,8 @@
       const firstDate = calendarDays[0].date;
       if (todayStr < firstDate) {
         // Plan hasn't started yet
-        const d = new Date(firstDate + "T00:00:00");
-        const formatted = d.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
+        const [y, m, dd] = firstDate.split("-");
+        const formatted = `${dd}.${m}.${y.slice(-2)}`;
         return { type: "not-started" as const, message: `Plan startet am ${formatted}` };
       }
       return { type: "free-day" as const, message: "Plan abgeschlossen" };
@@ -69,13 +69,10 @@
   let readingDone = $state(false);
   let kreuzenDone = $state(false);
 
-  // Format today's date in German
+  // Format today's date in DD.MM.YY
+  import { formatDateGerman } from "$lib/utils/dateUtils";
   const today = new Date();
-  const dateStr = today.toLocaleDateString("de-DE", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
+  const dateStr = formatDateGerman(today);
 
   // Initialize app on mount
   $effect(() => {
