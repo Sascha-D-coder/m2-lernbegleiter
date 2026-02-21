@@ -71,7 +71,14 @@
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFBMTI2Q0NDQzEzRjk3MzYKUldRMmx6L0J6R3dTcW9ucmNuVEo4aUl4Z2lRVE1ReUJXQXBVUVkrbk45Nk1pQUpTTllZZ2V6cUIK"
     },
     "shell": {
-      "open": true
+      "open": true,
+      "scope": [
+        {
+          "name": "curl",
+          "cmd": "curl",
+          "args": true
+        }
+      ]
     }
   }
 }

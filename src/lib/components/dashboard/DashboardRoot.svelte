@@ -14,7 +14,7 @@
   import { initNotifications, stopNotifications } from "$lib/services/notificationService";
   import { buildStudyPlan } from "$lib/utils/planEngine";
   import type { AmbossDay } from "$lib/utils/planEngine";
-  import { daysUntil } from "$lib/utils/dateUtils";
+  import { daysUntil, formatISODateShort } from "$lib/utils/dateUtils";
 
   type TabId = "today" | "plan" | "subjects" | "anki" | "retain" | "stats" | "settings";
 
@@ -112,7 +112,7 @@
     <!-- Bottom info -->
     <div class="border-t border-border px-4 py-3">
       <div class="text-xs text-text-muted">
-        Examen: <span class="text-text-secondary">{examDaysLeft > 0 ? `noch ${examDaysLeft} Tage` : "Heute!"}</span>
+        Examen ({formatISODateShort(getSettings().examDate)}): <span class="text-text-secondary">{examDaysLeft > 0 ? `noch ${examDaysLeft} Tage` : "Heute!"}</span>
       </div>
     </div>
   </nav>

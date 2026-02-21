@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getCalendarDays, getAmbossDays, isPlanGenerated } from "$lib/stores/planStore.svelte";
   import { getMasteryMap, getMasteryLevel, getMasteryColor, loadMastery } from "$lib/stores/retainStore.svelte";
+  import { formatISODateShort } from "$lib/utils/dateUtils";
   import { getDb } from "$lib/api/db";
 
   let calendarDays = $derived(getCalendarDays());
@@ -8,7 +9,6 @@
   let planGenerated = $derived(isPlanGenerated());
   let masteryMap = $derived(getMasteryMap());
 
-  // Track which subject cards are expanded
   let expandedSubjects = $state<Set<string>>(new Set());
 
   function toggleExpand(name: string) {
@@ -27,11 +27,11 @@
     "Chirurgie": "bg-orange-500",
     "Neurologie": "bg-blue-500",
     "Pädiatrie": "bg-green-500",
-    "Gynäkologie": "bg-pink-500",
-    "Orthopädie/Unfallchirurgie": "bg-amber-500",
+    "Gynäkologie & Geburtshilfe": "bg-pink-500",
+    "Orthopädie & Unfallchirurgie": "bg-amber-500",
     "Psychiatrie": "bg-indigo-500",
     "Dermatologie": "bg-yellow-500",
-    "HNO": "bg-teal-500",
+    "Hals-Nasen-Ohren-Heilkunde": "bg-teal-500",
     "Augenheilkunde": "bg-cyan-500",
     "Anästhesiologie": "bg-emerald-500",
     "Urologie": "bg-lime-500",
@@ -39,9 +39,25 @@
     "Rechtsmedizin": "bg-stone-500",
     "Notfallmedizin": "bg-rose-500",
     "Allgemeinmedizin": "bg-sky-500",
+    "Klinische Chemie & Labormedizin": "bg-fuchsia-500",
+    "Arbeitsmedizin & Hygiene": "bg-zinc-500",
+    "Mikrobiologie": "bg-violet-500",
   };
 
-  // Build subject summary with AMBOSS day numbers and sub-topics
+  // Build a mapping from AMBOSS day_number -> calendar date(s)
+  let dayNumberToCalendarDates = $derived.by(() => {
+    const map: Record<number, string[]> = {};
+    for (const cal of calendarDays) {
+      if (cal.ambossDay) {
+        const dn = cal.ambossDay.day_number;
+        if (!map[dn]) map[dn] = [];
+        map[dn].push(cal.date);
+      }
+    }
+    return map;
+  });
+
+  // Build subject summary with actual calendar dates from the plan
   let subjectSummary = $derived.by(() => {
     const subjects: Record<string, {
       name: string;
@@ -51,8 +67,9 @@
       mastery: number;
       color: string;
       dayNumbers: number[];
-      firstDayNumber: number;
-      subTopics: { subTopic: string; dayNumber: number; chapters: string[]; questionCount: number }[];
+      firstCalendarDate: string;
+      lastCalendarDate: string;
+      subTopics: { subTopic: string; dayNumber: number; calendarDates: string[]; chapters: string[]; questionCount: number }[];
     }> = {};
 
     const todayStr = new Date().toISOString().split("T")[0];
@@ -60,6 +77,8 @@
     for (const amboss of ambossDays) {
       if (amboss.is_optional) continue;
       const name = amboss.subject;
+      const calDates = dayNumberToCalendarDates[amboss.day_number] ?? [];
+
       if (!subjects[name]) {
         subjects[name] = {
           name,
@@ -69,7 +88,8 @@
           mastery: masteryMap[name]?.masteryScore ?? 0,
           color: colorMap[name] ?? "bg-gray-500",
           dayNumbers: [],
-          firstDayNumber: amboss.day_number,
+          firstCalendarDate: calDates[0] ?? "",
+          lastCalendarDate: calDates[calDates.length - 1] ?? "",
           subTopics: [],
         };
       }
@@ -77,10 +97,19 @@
       subjects[name].totalDays++;
       subjects[name].dayNumbers.push(amboss.day_number);
 
-      // Track sub-topics with their day numbers and chapters
+      for (const d of calDates) {
+        if (!subjects[name].firstCalendarDate || d < subjects[name].firstCalendarDate) {
+          subjects[name].firstCalendarDate = d;
+        }
+        if (!subjects[name].lastCalendarDate || d > subjects[name].lastCalendarDate) {
+          subjects[name].lastCalendarDate = d;
+        }
+      }
+
       subjects[name].subTopics.push({
         subTopic: amboss.sub_topic || name,
         dayNumber: amboss.day_number,
+        calendarDates: calDates,
         chapters: amboss.chapters,
         questionCount: amboss.question_count,
       });
@@ -98,20 +127,22 @@
       }
     }
 
-    // Sort by first day_number appearance (AMBOSS order)
-    return Object.values(subjects).sort((a, b) => a.firstDayNumber - b.firstDayNumber);
+    // Sort by first calendar date (actual plan order)
+    return Object.values(subjects).sort((a, b) => {
+      if (!a.firstCalendarDate) return 1;
+      if (!b.firstCalendarDate) return -1;
+      return a.firstCalendarDate.localeCompare(b.firstCalendarDate);
+    });
   });
 
   $effect(() => {
     loadMastery();
   });
 
-  function dayRange(dayNumbers: number[]): string {
-    if (dayNumbers.length === 0) return "";
-    const min = Math.min(...dayNumbers);
-    const max = Math.max(...dayNumbers);
-    if (min === max) return `Tag ${min}`;
-    return `Tag ${min}\u2013${max}`;
+  function calendarDateRange(first: string, last: string): string {
+    if (!first) return "";
+    if (first === last) return formatISODateShort(first);
+    return `${formatISODateShort(first)} – ${formatISODateShort(last)}`;
   }
 
   function masteryLabel(score: number): string {
@@ -144,12 +175,12 @@
 <div class="space-y-6">
   <div>
     <h2 class="text-2xl font-bold text-text-primary">Fächer</h2>
-    <p class="text-sm text-text-secondary">Fortschritt pro Fachgebiet mit AMBOSS 100-Tage Zuordnung</p>
+    <p class="text-sm text-text-secondary">Fortschritt pro Fachgebiet mit Lernplan-Daten</p>
   </div>
 
   {#if !planGenerated}
     <div class="rounded-xl bg-bg-secondary border border-border p-8 text-center">
-      <div class="text-4xl mb-3">📚</div>
+      <div class="text-4xl mb-3">&#128218;</div>
       <h3 class="text-lg font-semibold text-text-primary">Plan noch nicht generiert</h3>
       <p class="text-sm text-text-muted mt-2">
         Generiere zuerst deinen Lernplan unter dem <span class="font-medium text-accent">Plan</span>-Tab, um den Fortschritt pro Fach zu sehen.
@@ -157,7 +188,7 @@
     </div>
   {:else if subjectSummary.length === 0}
     <div class="rounded-xl bg-bg-secondary border border-border p-8 text-center">
-      <div class="text-4xl mb-3">📋</div>
+      <div class="text-4xl mb-3">&#128203;</div>
       <h3 class="text-lg font-semibold text-text-primary">Keine Fächer gefunden</h3>
       <p class="text-sm text-text-muted mt-2">
         Es wurden noch keine AMBOSS-Lerntage importiert.
@@ -169,7 +200,6 @@
         {@const progressPercent = subject.totalDays > 0 ? Math.round((subject.completedDays / subject.totalDays) * 100) : 0}
         {@const isExpanded = expandedSubjects.has(subject.name)}
         <div class="rounded-xl bg-bg-secondary border border-border transition-colors hover:border-accent/30">
-          <!-- Subject Header (always visible, clickable to expand) -->
           <button
             class="w-full p-4 text-left"
             onclick={() => toggleExpand(subject.name)}
@@ -178,7 +208,7 @@
               <div class="h-2.5 w-2.5 shrink-0 rounded-full {subject.color}"></div>
               <h4 class="text-sm font-medium text-text-primary truncate">{subject.name}</h4>
               <span class="ml-auto shrink-0 rounded-md bg-accent/10 border border-accent/20 px-2 py-0.5 text-[10px] font-medium text-accent">
-                {dayRange(subject.dayNumbers)}
+                {calendarDateRange(subject.firstCalendarDate, subject.lastCalendarDate)}
               </span>
               <svg
                 class="h-4 w-4 shrink-0 text-text-muted transition-transform {isExpanded ? 'rotate-180' : ''}"
@@ -215,7 +245,6 @@
             </div>
           </button>
 
-          <!-- Expanded: Sub-topics with day numbers and chapters -->
           {#if isExpanded}
             <div class="border-t border-border px-4 pb-4 pt-3">
               <div class="space-y-2.5">
@@ -224,7 +253,11 @@
                     <div class="flex items-center justify-between mb-1.5">
                       <div class="flex items-center gap-2 min-w-0">
                         <span class="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-mono font-medium text-accent">
-                          Tag {entry.dayNumber}
+                          {#if entry.calendarDates.length > 0}
+                            {formatISODateShort(entry.calendarDates[0])}
+                          {:else}
+                            Tag {entry.dayNumber}
+                          {/if}
                         </span>
                         <span class="text-xs font-medium text-text-secondary truncate">{entry.subTopic}</span>
                       </div>

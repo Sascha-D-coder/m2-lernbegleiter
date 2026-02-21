@@ -41,37 +41,40 @@ const MONTH_NAMES_SHORT = [
 ];
 
 /**
- * Format a date in short German style with abbreviated day and month.
- * Example: "Mo, 15. Apr. 2026"
+ * Format a date in short German style: "Mo, 15.04.26"
  */
 export function formatDateGerman(date: Date): string {
   const dayShort = DAY_NAMES_SHORT[date.getDay()];
-  const day = date.getDate();
-  const monthShort = MONTH_NAMES_SHORT[date.getMonth()];
-  const year = date.getFullYear();
-  return `${dayShort}, ${day}. ${monthShort} ${year}`;
+  return `${dayShort}, ${formatDateShort(date)}`;
 }
 
 /**
- * Format a date in long German style.
- * Example: "Montag, 15. April 2026"
+ * Format a date in long German style: "Montag, 15.04.26"
  */
 export function formatDateLong(date: Date): string {
   const dayName = DAY_NAMES[date.getDay()];
-  const day = date.getDate();
-  const monthName = MONTH_NAMES[date.getMonth()];
-  const year = date.getFullYear();
-  return `${dayName}, ${day}. ${monthName} ${year}`;
+  return `${dayName}, ${formatDateShort(date)}`;
 }
 
 /**
- * Format a date in numeric German style.
- * Example: "15.04.2026"
+ * Format a date in numeric German style with 2-digit year: DD.MM.YY
+ * Example: "15.04.26"
  */
 export function formatDateShort(date: Date): string {
   const day = String(date.getDate()).padStart(2, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
+  const year = String(date.getFullYear()).slice(-2);
+  return `${day}.${month}.${year}`;
+}
+
+/**
+ * Format an ISO date string (YYYY-MM-DD) to DD.MM.YY using UTC components.
+ */
+export function formatISODateShort(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const day = String(d).padStart(2, "0");
+  const month = String(m).padStart(2, "0");
+  const year = String(y).slice(-2);
   return `${day}.${month}.${year}`;
 }
 

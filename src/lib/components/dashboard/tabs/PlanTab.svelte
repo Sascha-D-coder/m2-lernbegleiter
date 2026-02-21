@@ -9,7 +9,8 @@
   } from "$lib/stores/planStore.svelte";
   import { getSettings } from "$lib/stores/settingsStore.svelte";
   import { buildStudyPlan, type CalendarDay, type Phase } from "$lib/utils/planEngine";
-  import { formatDateGerman } from "$lib/utils/dateUtils";
+  import { formatISODateShort } from "$lib/utils/dateUtils";
+  import { toastSuccess, toastError, toastInfo, toastWarning } from "$lib/stores/toastStore.svelte";
 
   // ---------------------------------------------------------------------------
   // Local state
@@ -18,6 +19,10 @@
   let error = $state("");
   let selectedDayIndex = $state<number | null>(null);
   let activeView = $state<"calendar" | "list">("calendar");
+
+  // Drag-and-drop state for list view reordering
+  let dragSourceIndex = $state<number | null>(null);
+  let dragOverIndex = $state<number | null>(null);
 
   // ---------------------------------------------------------------------------
   // Derived from stores
@@ -73,22 +78,54 @@
   );
 
   // ---------------------------------------------------------------------------
-  // Phase styling helpers
+  // Subject color map for calendar cells
   // ---------------------------------------------------------------------------
-  const PHASE_COLORS: Record<Phase, { bg: string; text: string; label: string }> = {
-    semester: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Semester" },
-    "semester-late": { bg: "bg-blue-400/20", text: "text-blue-300", label: "Semester (sp\u00e4t)" },
-    vollzeit: { bg: "bg-green-500/20", text: "text-green-400", label: "Vollzeit" },
-    "vollzeit-late": { bg: "bg-green-400/20", text: "text-green-300", label: "Vollzeit (sp\u00e4t)" },
-    "vacation-june": { bg: "bg-amber-500/20", text: "text-amber-400", label: "Urlaub Juni" },
-    "vacation-sept": { bg: "bg-amber-500/20", text: "text-amber-400", label: "Urlaub Sept" },
-    weekend: { bg: "bg-bg-primary", text: "text-text-muted", label: "Wochenende" },
-    "exam-prep": { bg: "bg-red-500/20", text: "text-red-400", label: "Probeklausuren" },
-    buffer: { bg: "bg-transparent", text: "text-text-muted", label: "Puffer" },
+  const SUBJECT_COLORS: Record<string, { bg: string; text: string }> = {
+    "Innere Medizin": { bg: "bg-red-500/25", text: "text-red-400" },
+    "Chirurgie": { bg: "bg-orange-500/25", text: "text-orange-400" },
+    "Anästhesiologie": { bg: "bg-emerald-500/25", text: "text-emerald-400" },
+    "Augenheilkunde": { bg: "bg-cyan-500/25", text: "text-cyan-400" },
+    "Dermatologie": { bg: "bg-yellow-500/25", text: "text-yellow-400" },
+    "Gynäkologie & Geburtshilfe": { bg: "bg-pink-500/25", text: "text-pink-400" },
+    "Hals-Nasen-Ohren-Heilkunde": { bg: "bg-teal-500/25", text: "text-teal-400" },
+    "Orthopädie & Unfallchirurgie": { bg: "bg-amber-500/25", text: "text-amber-400" },
+    "Neurologie": { bg: "bg-blue-500/25", text: "text-blue-400" },
+    "Psychiatrie": { bg: "bg-indigo-500/25", text: "text-indigo-400" },
+    "Pädiatrie": { bg: "bg-green-500/25", text: "text-green-400" },
+    "Radiologie": { bg: "bg-slate-500/25", text: "text-slate-400" },
+    "Notfallmedizin": { bg: "bg-rose-500/25", text: "text-rose-400" },
+    "Urologie": { bg: "bg-lime-500/25", text: "text-lime-400" },
+    "Pharmakologie": { bg: "bg-purple-500/25", text: "text-purple-400" },
+    "Klinische Chemie & Labormedizin": { bg: "bg-fuchsia-500/25", text: "text-fuchsia-400" },
+    "Rechtsmedizin": { bg: "bg-stone-500/25", text: "text-stone-400" },
+    "Arbeitsmedizin & Hygiene": { bg: "bg-zinc-500/25", text: "text-zinc-400" },
+    "Allgemeinmedizin": { bg: "bg-sky-500/25", text: "text-sky-400" },
+    "Mikrobiologie": { bg: "bg-violet-500/25", text: "text-violet-400" },
+    "Wiederholung": { bg: "bg-gray-500/25", text: "text-gray-400" },
+    "Generalprobe": { bg: "bg-red-600/25", text: "text-red-300" },
   };
 
-  function phaseStyle(phase: Phase): { bg: string; text: string } {
-    return PHASE_COLORS[phase] ?? { bg: "bg-transparent", text: "text-text-muted" };
+  const DEFAULT_SUBJECT_STYLE = { bg: "bg-gray-500/20", text: "text-gray-400" };
+
+  function subjectStyle(subject: string | undefined): { bg: string; text: string } {
+    if (!subject) return DEFAULT_SUBJECT_STYLE;
+    return SUBJECT_COLORS[subject] ?? DEFAULT_SUBJECT_STYLE;
+  }
+
+  function cellStyle(cell: CalendarDay): { bg: string; text: string } {
+    if (cell.ambossDay) {
+      return subjectStyle(cell.ambossDay.subject);
+    }
+    if (cell.phase === "vacation-june" || cell.phase === "vacation-sept") {
+      return { bg: "bg-amber-500/15", text: "text-amber-400" };
+    }
+    if (cell.phase === "exam-prep") {
+      return { bg: "bg-red-500/20", text: "text-red-400" };
+    }
+    if (cell.phase === "weekend") {
+      return { bg: "bg-bg-primary", text: "text-text-muted" };
+    }
+    return { bg: "bg-transparent", text: "text-text-muted" };
   }
 
   function splitLabel(part: CalendarDay["splitPart"]): string {
@@ -100,8 +137,12 @@
     }
   }
 
+  function isExamDate(dateStr: string): boolean {
+    const settings = getSettings();
+    return dateStr === settings.examDate;
+  }
+
   // --- AMBOSS link helpers ---
-  import { toastInfo, toastWarning } from "$lib/stores/toastStore.svelte";
 
   async function openAmbossChapter(chapter: string) {
     if (!chapter) {
@@ -144,7 +185,7 @@
   }
 
   const MONTH_NAMES_DE = [
-    "Januar", "Februar", "M\u00e4rz", "April", "Mai", "Juni",
+    "Januar", "Februar", "März", "April", "Mai", "Juni",
     "Juli", "August", "September", "Oktober", "November", "Dezember"
   ];
 
@@ -155,22 +196,15 @@
     return `${MONTH_NAMES_DE[month - 1]} ${year}`;
   }
 
-  /** Parse ISO date to Date object (UTC). */
   function parseISO(iso: string): Date {
     const [y, m, d] = iso.split("-").map(Number);
     return new Date(Date.UTC(y, m - 1, d));
   }
 
-  /**
-   * For the calendar grid we need to know which column (0-6, Mon-Sun)
-   * each day falls in. ISO dayOfWeek: 0=Sunday. We remap to Mon=0..Sun=6.
-   */
   function dayToGridCol(dayOfWeek: number): number {
-    // dayOfWeek: 0=Sun,1=Mon,...,6=Sat -> Mon=0,Tue=1,...,Sun=6
     return dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   }
 
-  /** Build the grid rows for a given month. Returns a 2D array (weeks x 7 slots). */
   function buildMonthGrid(days: CalendarDay[]): (CalendarDay | null)[][] {
     if (days.length === 0) return [];
     const weeks: (CalendarDay | null)[][] = [];
@@ -180,14 +214,12 @@
       const col = dayToGridCol(day.dayOfWeek);
       currentWeek[col] = day;
 
-      // If we placed a Sunday (col=6), push and start new week
       if (col === 6) {
         weeks.push(currentWeek);
         currentWeek = new Array(7).fill(null);
       }
     }
 
-    // Push the last partial week if it has any days
     if (currentWeek.some((d) => d !== null)) {
       weeks.push(currentWeek);
     }
@@ -196,22 +228,33 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Subject legend for the calendar
+  // ---------------------------------------------------------------------------
+  let activeSubjects = $derived.by(() => {
+    const subjects = new Set<string>();
+    for (const day of calendarDays) {
+      if (day.ambossDay) {
+        subjects.add(day.ambossDay.subject);
+      }
+    }
+    return [...subjects];
+  });
+
+  // ---------------------------------------------------------------------------
   // Generate plan action
   // ---------------------------------------------------------------------------
   async function generatePlan() {
     generating = true;
     error = "";
+    toastInfo("Plan wird generiert...");
     try {
-      // Fetch AMBOSS plan from static JSON
       const response = await fetch("/amboss-plan.json");
       if (!response.ok) throw new Error("Konnte AMBOSS-Plan nicht laden");
       const ambossData = await response.json();
 
-      // Import into store (which also saves to DB)
       const { importAmbossPlan } = await import("$lib/stores/planStore.svelte");
       await importAmbossPlan(ambossData);
 
-      // Build the study plan using settings
       const settings = getSettings();
       const planConfig = {
         startDate: settings.planStartDate,
@@ -233,12 +276,61 @@
 
       const days = buildStudyPlan(ambossData, planConfig);
       setCalendarDays(days);
+      toastSuccess("Lernplan erfolgreich generiert!");
     } catch (e: unknown) {
       error = e instanceof Error ? e.message : "Unbekannter Fehler";
+      toastError(`Plan-Generierung fehlgeschlagen: ${error}`);
       console.error("Plan generation failed:", e);
     } finally {
       generating = false;
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Drag-and-drop reordering in list view
+  // ---------------------------------------------------------------------------
+  function handleDragStart(idx: number) {
+    dragSourceIndex = idx;
+  }
+
+  function handleDragOver(e: DragEvent, idx: number) {
+    e.preventDefault();
+    dragOverIndex = idx;
+  }
+
+  function handleDragEnd() {
+    dragSourceIndex = null;
+    dragOverIndex = null;
+  }
+
+  async function handleDrop(targetIdx: number) {
+    if (dragSourceIndex === null || dragSourceIndex === targetIdx) {
+      dragSourceIndex = null;
+      dragOverIndex = null;
+      return;
+    }
+
+    const sourceDay = studyDaysList[dragSourceIndex];
+    const targetDay = studyDaysList[targetIdx];
+
+    if (!sourceDay || !targetDay) return;
+
+    const sourceCalIdx = calendarDays.findIndex((d) => d.date === sourceDay.date);
+    const targetCalIdx = calendarDays.findIndex((d) => d.date === targetDay.date);
+
+    if (sourceCalIdx < 0 || targetCalIdx < 0) return;
+
+    // Clone calendar and swap the amboss day assignments
+    const newCalendar = calendarDays.map((d) => ({ ...d }));
+    const tempAmboss = newCalendar[sourceCalIdx].ambossDay;
+    newCalendar[sourceCalIdx].ambossDay = newCalendar[targetCalIdx].ambossDay;
+    newCalendar[targetCalIdx].ambossDay = tempAmboss;
+
+    await setCalendarDays(newCalendar);
+    toastSuccess("Lerneinheiten getauscht!");
+
+    dragSourceIndex = null;
+    dragOverIndex = null;
   }
 </script>
 
@@ -314,18 +406,29 @@
       </div>
     </div>
 
-    <!-- Phase Legend -->
+    <!-- Subject Color Legend (replaces Phase Legend) -->
     <div class="rounded-xl bg-bg-secondary border border-border p-4">
-      <h4 class="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">Phasen-Legende</h4>
-      <div class="flex flex-wrap gap-3">
-        {#each Object.entries(PHASE_COLORS) as [phase, colors]}
-          {#if phase !== "buffer"}
-            <div class="flex items-center gap-1.5">
-              <span class="inline-block h-3 w-3 rounded-sm {colors.bg} {colors.text} border border-current/20"></span>
-              <span class="text-xs text-text-secondary">{colors.label}</span>
-            </div>
-          {/if}
+      <h4 class="text-xs font-medium uppercase tracking-wider text-text-muted mb-3">Fächer-Legende</h4>
+      <div class="flex flex-wrap gap-2">
+        {#each activeSubjects as subject}
+          {@const style = subjectStyle(subject)}
+          <div class="flex items-center gap-1.5">
+            <span class="inline-block h-3 w-3 rounded-sm {style.bg} border border-current/20 {style.text}"></span>
+            <span class="text-[10px] text-text-secondary">{subject}</span>
+          </div>
         {/each}
+        <div class="flex items-center gap-1.5 ml-2 pl-2 border-l border-border">
+          <span class="inline-block h-3 w-3 rounded-sm bg-amber-500/15 border border-amber-400/20"></span>
+          <span class="text-[10px] text-text-secondary">Urlaub</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="inline-block h-3 w-3 rounded-sm bg-red-500/20 border border-red-400/20"></span>
+          <span class="text-[10px] text-text-secondary">Probeklausuren</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="inline-block h-3 w-3 rounded-sm bg-bg-primary border-2 border-danger"></span>
+          <span class="text-[10px] text-text-secondary font-bold">Examen</span>
+        </div>
       </div>
     </div>
 
@@ -370,10 +473,11 @@
                   {#if cell === null}
                     <div class="h-14 rounded-md"></div>
                   {:else}
-                    {@const style = phaseStyle(cell.phase)}
+                    {@const style = cellStyle(cell)}
                     {@const isToday = cell.date === todayStr}
                     {@const hasAmboss = cell.ambossDay !== null}
                     {@const isSelected = selectedDayIndex !== null && calendarDays[selectedDayIndex]?.date === cell.date}
+                    {@const isExam = isExamDate(cell.date)}
                     <button
                       onclick={() => {
                         const idx = calendarDays.findIndex((d) => d.date === cell.date);
@@ -383,15 +487,18 @@
                         {style.bg} {style.text}
                         {isToday ? 'ring-2 ring-accent ring-offset-1 ring-offset-bg-primary' : ''}
                         {isSelected ? 'ring-2 ring-text-primary' : ''}
+                        {isExam ? 'ring-2 ring-danger' : ''}
                         hover:brightness-125 cursor-pointer"
                     >
-                      <span class="text-xs font-medium leading-none mt-0.5">
+                      <span class="text-xs leading-none mt-0.5 {isExam ? 'font-black text-danger' : 'font-medium'}">
                         {parseISO(cell.date).getUTCDate()}
                       </span>
-                      {#if cell.phase === "vacation-june" || cell.phase === "vacation-sept"}
+                      {#if isExam}
+                        <span class="text-[8px] leading-none mt-0.5 font-bold text-danger">EXAM</span>
+                      {:else if cell.phase === "vacation-june" || cell.phase === "vacation-sept"}
                         <span class="text-[9px] leading-none mt-1 opacity-70">Url.</span>
                       {:else if cell.phase === "exam-prep"}
-                        <span class="text-[9px] leading-none mt-1 opacity-70">Exam</span>
+                        <span class="text-[9px] leading-none mt-1 opacity-70">Probe</span>
                       {:else if hasAmboss}
                         <span class="text-[9px] leading-tight mt-0.5 line-clamp-2 w-full overflow-hidden">
                           {cell.ambossDay!.subject.substring(0, 4)}
@@ -414,12 +521,16 @@
       </div>
 
     {:else}
-      <!-- List View: Study days only -->
+      <!-- List View: Study days only (draggable) -->
       <div class="rounded-xl bg-bg-secondary border border-border overflow-hidden">
+        <div class="px-4 py-2 border-b border-border bg-bg-secondary/50">
+          <p class="text-[10px] text-text-muted">Ziehe Zeilen per Drag &amp; Drop, um Lerneinheiten umzuordnen.</p>
+        </div>
         <div class="overflow-y-auto max-h-[600px]">
           <table class="w-full text-sm">
             <thead class="sticky top-0 bg-bg-secondary border-b border-border">
               <tr class="text-xs text-text-muted uppercase tracking-wider">
+                <th class="text-left px-2 py-2 font-medium w-6"></th>
                 <th class="text-left px-3 py-2 font-medium">Datum</th>
                 <th class="text-left px-3 py-2 font-medium">Tag</th>
                 <th class="text-left px-3 py-2 font-medium">Fach</th>
@@ -431,20 +542,34 @@
             <tbody>
               {#each studyDaysList as day, idx}
                 {@const isToday = day.date === todayStr}
-                {@const style = phaseStyle(day.phase)}
+                {@const style = cellStyle(day)}
                 {@const isSelected = selectedDayIndex !== null && calendarDays[selectedDayIndex]?.date === day.date}
+                {@const isDragOver = dragOverIndex === idx && dragSourceIndex !== null && dragSourceIndex !== idx}
                 <tr
+                  draggable="true"
+                  ondragstart={() => handleDragStart(idx)}
+                  ondragover={(e: DragEvent) => handleDragOver(e, idx)}
+                  ondragend={handleDragEnd}
+                  ondrop={() => handleDrop(idx)}
                   onclick={() => {
                     const calIdx = calendarDays.findIndex((d) => d.date === day.date);
                     selectedDayIndex = calIdx >= 0 ? calIdx : null;
                   }}
-                  class="border-b border-border/50 cursor-pointer transition-colors hover:bg-bg-primary
+                  class="border-b border-border/50 cursor-grab transition-colors hover:bg-bg-primary
                     {isToday ? 'bg-accent/10 border-l-2 border-l-accent' : ''}
-                    {isSelected ? 'bg-bg-primary' : ''}"
+                    {isSelected ? 'bg-bg-primary' : ''}
+                    {isDragOver ? 'bg-accent/20 border-t-2 border-t-accent' : ''}"
                 >
+                  <td class="px-2 py-2 text-text-muted">
+                    <svg class="w-3.5 h-3.5 opacity-40" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/>
+                      <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+                      <circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/>
+                    </svg>
+                  </td>
                   <td class="px-3 py-2 whitespace-nowrap">
                     <span class="text-text-secondary">
-                      {parseISO(day.date).getUTCDate()}.{String(parseISO(day.date).getUTCMonth() + 1).padStart(2, "0")}.
+                      {formatISODateShort(day.date)}
                     </span>
                   </td>
                   <td class="px-3 py-2">
@@ -486,22 +611,24 @@
 <!-- Selected Day Detail: docked to bottom outside scroll area -->
 {#if selectedDayIndex !== null && calendarDays[selectedDayIndex]}
   {@const sel = calendarDays[selectedDayIndex]}
-  {@const selStyle = phaseStyle(sel.phase)}
+  {@const selStyle = cellStyle(sel)}
   <div class="shrink-0 border-t border-border bg-bg-secondary p-4">
     <div class="flex items-start justify-between">
       <div class="flex-1 min-w-0">
         <div class="text-xs font-medium uppercase tracking-wider {selStyle.text}">
-          {PHASE_COLORS[sel.phase]?.label ?? sel.phase}
+          {sel.ambossDay?.subject ?? sel.phase}
         </div>
         <h3 class="text-base font-semibold text-text-primary mt-0.5">
-          {formatDateGerman(parseISO(sel.date))}
+          {formatISODateShort(sel.date)}
+          {#if isExamDate(sel.date)}
+            <span class="ml-2 text-danger font-bold">EXAMEN</span>
+          {/if}
         </h3>
         {#if sel.ambossDay}
           <p class="text-sm text-text-secondary mt-1">
             Tag {sel.ambossDay.day_number}: {sel.ambossDay.subject} &ndash; {sel.ambossDay.sub_topic}
           </p>
 
-          <!-- Chapters (clickable) -->
           {#if sel.ambossDay.chapters && sel.ambossDay.chapters.length > 0}
             <div class="mt-2">
               <div class="text-xs font-medium text-text-muted mb-1.5">Kapitel:</div>
@@ -518,14 +645,13 @@
             </div>
           {/if}
 
-          <!-- Action buttons (Lesen / Kreuzen) -->
           <div class="flex flex-wrap gap-2 mt-3">
             {#if sel.splitPart === "reading" || sel.splitPart === "both"}
               <button
                 onclick={() => openAmbossChapter(sel.ambossDay!.chapters[0] ?? sel.ambossDay!.subject)}
                 class="rounded-md bg-accent/15 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/25 transition-colors cursor-pointer"
               >
-                📖 Kapitel lesen
+                Kapitel lesen
               </button>
             {/if}
             {#if sel.splitPart === "kreuzen" || sel.splitPart === "both"}
@@ -533,7 +659,7 @@
                 onclick={openAmbossKreuzen}
                 class="rounded-md bg-accent/15 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/25 transition-colors cursor-pointer"
               >
-                ✏️ {sel.ambossDay.question_count} Fragen kreuzen
+                {sel.ambossDay.question_count} Fragen kreuzen
               </button>
             {/if}
             <span class="rounded-md bg-bg-primary px-2 py-0.5 text-xs text-text-secondary">
@@ -555,7 +681,7 @@
                 onclick={openAmbossProbeklausur}
                 class="rounded-md bg-red-500/15 px-3 py-1 text-xs font-medium text-red-400 hover:bg-red-500/25 transition-colors cursor-pointer"
               >
-                📝 AMBOSS-Probeklausur starten
+                AMBOSS-Probeklausur starten
               </button>
               <span class="rounded-md bg-bg-primary px-2 py-0.5 text-xs text-text-secondary">
                 Anki: {sel.ankiTarget} (leicht)

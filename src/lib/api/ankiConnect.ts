@@ -1,4 +1,4 @@
-const ANKI_URL = "http://localhost:8765";
+const ANKI_URL = "http://127.0.0.1:8765";
 
 interface AnkiResponse<T> {
   result: T;
@@ -9,13 +9,41 @@ async function ankiInvoke<T>(
   action: string,
   params?: Record<string, unknown>
 ): Promise<T> {
-  const response = await fetch(ANKI_URL, {
-    method: "POST",
-    body: JSON.stringify({ action, version: 6, params }),
-  });
-  const data: AnkiResponse<T> = await response.json();
-  if (data.error) throw new Error(data.error);
-  return data.result;
+  const payload = JSON.stringify({ action, version: 6, params });
+
+  // Try using Tauri shell plugin to bypass webview CORS restrictions
+  try {
+    const { Command } = await import("@tauri-apps/plugin-shell");
+    const cmd = Command.create("curl", [
+      "-s",
+      "-X", "POST",
+      "-H", "Content-Type: application/json",
+      "-d", payload,
+      "--connect-timeout", "5",
+      ANKI_URL,
+    ]);
+    const output = await cmd.execute();
+    if (output.code !== 0) {
+      throw new Error(`curl failed: ${output.stderr}`);
+    }
+    const data: AnkiResponse<T> = JSON.parse(output.stdout);
+    if (data.error) throw new Error(data.error);
+    return data.result;
+  } catch (shellError) {
+    // Fallback: direct fetch (works in dev mode / non-Tauri)
+    try {
+      const response = await fetch(ANKI_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      });
+      const data: AnkiResponse<T> = await response.json();
+      if (data.error) throw new Error(data.error);
+      return data.result;
+    } catch {
+      throw shellError;
+    }
+  }
 }
 
 export async function checkConnection(): Promise<boolean> {
