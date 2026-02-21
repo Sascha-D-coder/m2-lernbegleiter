@@ -41,10 +41,6 @@
     ],
     "security": {
       "csp": null
-    },
-    "trayIcon": {
-      "iconPath": "icons/icon.png",
-      "tooltip": "M2 Lernbegleiter"
     }
   },
   "bundle": {

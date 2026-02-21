@@ -1,4 +1,5 @@
 use tauri::{
+    image::Image,
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
     Manager,
@@ -43,7 +44,17 @@ pub fn run() {
             let quit_i = MenuItem::with_id(app, "quit", "Beenden", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show_i, &dashboard_i, &quit_i])?;
 
+            // Use the app's default window icon for the tray
+            let tray_icon = app
+                .default_window_icon()
+                .cloned()
+                .unwrap_or_else(|| {
+                    Image::from_bytes(include_bytes!("../icons/icon.png"))
+                        .expect("failed to load tray icon")
+                });
+
             let _tray = TrayIconBuilder::new()
+                .icon(tray_icon)
                 .menu(&menu)
                 .tooltip("M2 Lernbegleiter")
                 .on_menu_event(|app_handle: &tauri::AppHandle, event| {
@@ -76,8 +87,7 @@ pub fn run() {
                 })
                 .build(app)?;
 
-            // Force widget webview background to transparent (fixes white corners on macOS)
-            #[cfg(target_os = "macos")]
+            // Force widget webview background to transparent (fixes white corners)
             {
                 use tauri::webview::Color;
                 if let Some(widget) = app.get_webview_window("widget") {
