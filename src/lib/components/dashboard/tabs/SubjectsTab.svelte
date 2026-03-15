@@ -1,13 +1,14 @@
 <script lang="ts">
   import { getCalendarDays, getAmbossDays, isPlanGenerated } from "$lib/stores/planStore.svelte";
-  import { getMasteryMap, getMasteryLevel, getMasteryColor, loadMastery } from "$lib/stores/retainStore.svelte";
-  import { formatISODateShort } from "$lib/utils/dateUtils";
-  import { getDb } from "$lib/api/db";
+  import { getMasteryMap, getMasteryLevel, loadMastery } from "$lib/stores/retainStore.svelte";
+  import { getProgressMap } from "$lib/stores/progressStore.svelte";
+  import { toastInfo, toastWarning } from "$lib/stores/toastStore.svelte";
 
   let calendarDays = $derived(getCalendarDays());
   let ambossDays = $derived(getAmbossDays());
   let planGenerated = $derived(isPlanGenerated());
   let masteryMap = $derived(getMasteryMap());
+  let progressMap = $derived(getProgressMap());
 
   let expandedSubjects = $state<Set<string>>(new Set());
 
@@ -22,42 +23,31 @@
   }
 
   const colorMap: Record<string, string> = {
-    "Pharmakologie": "bg-purple-500",
     "Innere Medizin": "bg-red-500",
     "Chirurgie": "bg-orange-500",
-    "Neurologie": "bg-blue-500",
-    "Pädiatrie": "bg-green-500",
-    "Gynäkologie & Geburtshilfe": "bg-pink-500",
-    "Orthopädie & Unfallchirurgie": "bg-amber-500",
-    "Psychiatrie": "bg-indigo-500",
-    "Dermatologie": "bg-yellow-500",
-    "Hals-Nasen-Ohren-Heilkunde": "bg-teal-500",
+    "Anästhesie": "bg-emerald-500",
     "Augenheilkunde": "bg-cyan-500",
-    "Anästhesiologie": "bg-emerald-500",
-    "Urologie": "bg-lime-500",
+    "Dermatologie": "bg-yellow-500",
+    "Gynäkologie": "bg-pink-500",
+    "HNO": "bg-teal-500",
+    "Orthopädie": "bg-amber-500",
+    "Neurologie": "bg-blue-500",
+    "Psychiatrie": "bg-indigo-500",
+    "Pädiatrie": "bg-green-500",
     "Radiologie": "bg-slate-500",
+    "Intensiv- und Notfallmedizin": "bg-rose-500",
+    "Urologie": "bg-lime-500",
+    "Pharmakologie": "bg-purple-500",
+    "Infektiologie und Hygiene": "bg-violet-500",
     "Rechtsmedizin": "bg-stone-500",
-    "Notfallmedizin": "bg-rose-500",
-    "Allgemeinmedizin": "bg-sky-500",
-    "Klinische Chemie & Labormedizin": "bg-fuchsia-500",
-    "Arbeitsmedizin & Hygiene": "bg-zinc-500",
-    "Mikrobiologie": "bg-violet-500",
+    "Arbeits- und Umweltmedizin": "bg-zinc-500",
+    "Humangenetik": "bg-sky-500",
+    "Pathologie": "bg-fuchsia-500",
+    "Epidemiologie": "bg-teal-600",
+    "Sozialmedizin & Alternative Heilverfahren und Rehabilitation": "bg-zinc-600",
   };
 
-  // Build a mapping from AMBOSS day_number -> calendar date(s)
-  let dayNumberToCalendarDates = $derived.by(() => {
-    const map: Record<number, string[]> = {};
-    for (const cal of calendarDays) {
-      if (cal.ambossDay) {
-        const dn = cal.ambossDay.day_number;
-        if (!map[dn]) map[dn] = [];
-        map[dn].push(cal.date);
-      }
-    }
-    return map;
-  });
-
-  // Build subject summary with actual calendar dates from the plan
+  // Build subject summary
   let subjectSummary = $derived.by(() => {
     const subjects: Record<string, {
       name: string;
@@ -67,9 +57,15 @@
       mastery: number;
       color: string;
       dayNumbers: number[];
-      firstCalendarDate: string;
-      lastCalendarDate: string;
-      subTopics: { subTopic: string; dayNumber: number; calendarDates: string[]; chapters: string[]; questionCount: number }[];
+      subTopics: {
+        subTopic: string;
+        dayNumber: number;
+        chapters: string[];
+        chapterUrls: Record<string, string>;
+        ambossUrl: string;
+        questionCount: number;
+        estimatedHours: number;
+      }[];
     }> = {};
 
     const todayStr = new Date().toISOString().split("T")[0];
@@ -77,19 +73,19 @@
     for (const amboss of ambossDays) {
       if (amboss.is_optional) continue;
       const name = amboss.subject;
-      const calDates = dayNumberToCalendarDates[amboss.day_number] ?? [];
 
       if (!subjects[name]) {
+        let color = colorMap[name] ?? "bg-gray-500";
+        if (name.startsWith("Wiederholung")) color = "bg-gray-500";
+        if (name.startsWith("Generalprobe")) color = "bg-red-600";
         subjects[name] = {
           name,
           totalDays: 0,
           completedDays: 0,
           totalQuestions: 0,
           mastery: masteryMap[name]?.masteryScore ?? 0,
-          color: colorMap[name] ?? "bg-gray-500",
+          color,
           dayNumbers: [],
-          firstCalendarDate: calDates[0] ?? "",
-          lastCalendarDate: calDates[calDates.length - 1] ?? "",
           subTopics: [],
         };
       }
@@ -97,41 +93,33 @@
       subjects[name].totalDays++;
       subjects[name].dayNumbers.push(amboss.day_number);
 
-      for (const d of calDates) {
-        if (!subjects[name].firstCalendarDate || d < subjects[name].firstCalendarDate) {
-          subjects[name].firstCalendarDate = d;
-        }
-        if (!subjects[name].lastCalendarDate || d > subjects[name].lastCalendarDate) {
-          subjects[name].lastCalendarDate = d;
-        }
-      }
-
       subjects[name].subTopics.push({
         subTopic: amboss.sub_topic || name,
         dayNumber: amboss.day_number,
-        calendarDates: calDates,
         chapters: amboss.chapters,
+        chapterUrls: amboss.chapter_urls ?? {},
+        ambossUrl: amboss.amboss_url ?? "",
         questionCount: amboss.question_count,
+        estimatedHours: amboss.estimated_hours,
       });
     }
 
-    // Count completed days from calendar
+    // Count completed days from actual progress data
     for (const cal of calendarDays) {
-      if (cal.ambossDay && cal.date <= todayStr) {
+      if (cal.ambossDay) {
         const name = cal.ambossDay.subject;
         if (subjects[name]) {
-          if (cal.splitPart === 'both' || cal.splitPart === 'kreuzen') {
+          const progress = progressMap.get(cal.date);
+          if (progress && progress.readingCompleted && progress.kreuzenCompleted) {
             subjects[name].completedDays++;
           }
         }
       }
     }
 
-    // Sort by first calendar date (actual plan order)
+    // Sort by first day_number (plan order)
     return Object.values(subjects).sort((a, b) => {
-      if (!a.firstCalendarDate) return 1;
-      if (!b.firstCalendarDate) return -1;
-      return a.firstCalendarDate.localeCompare(b.firstCalendarDate);
+      return (a.dayNumbers[0] ?? 999) - (b.dayNumbers[0] ?? 999);
     });
   });
 
@@ -139,10 +127,10 @@
     loadMastery();
   });
 
-  function calendarDateRange(first: string, last: string): string {
-    if (!first) return "";
-    if (first === last) return formatISODateShort(first);
-    return `${formatISODateShort(first)} – ${formatISODateShort(last)}`;
+  function dayRange(dayNumbers: number[]): string {
+    if (dayNumbers.length === 0) return "";
+    if (dayNumbers.length === 1) return `Tag ${dayNumbers[0]}`;
+    return `Tag ${dayNumbers[0]}–${dayNumbers[dayNumbers.length - 1]}`;
   }
 
   function masteryLabel(score: number): string {
@@ -167,8 +155,29 @@
     return colors[level];
   }
 
-  function ambossSearchUrl(chapterName: string): string {
-    return `https://next.amboss.com/de/search?q=${encodeURIComponent(chapterName)}&v=overview`;
+  async function openUrl(url: string, label: string) {
+    try {
+      const { openUrl: open } = await import("@tauri-apps/plugin-opener");
+      await open(url);
+      toastInfo(`Öffne ${label} in AMBOSS...`);
+    } catch {
+      window.open(url, "_blank");
+    }
+  }
+
+  function openChapter(chapter: string, chapterUrls: Record<string, string>) {
+    const directUrl = chapterUrls[chapter];
+    if (directUrl) {
+      openUrl(directUrl, `"${chapter}"`);
+    } else {
+      openUrl(`https://next.amboss.com/de/search?q=${encodeURIComponent(chapter)}`, `"${chapter}"`);
+    }
+  }
+
+  function openDayUrl(ambossUrl: string, dayNumber: number) {
+    if (ambossUrl) {
+      openUrl(ambossUrl, `Tag ${dayNumber}`);
+    }
   }
 </script>
 
@@ -207,8 +216,8 @@
             <div class="flex items-center gap-2 mb-2">
               <div class="h-2.5 w-2.5 shrink-0 rounded-full {subject.color}"></div>
               <h4 class="text-sm font-medium text-text-primary truncate">{subject.name}</h4>
-              <span class="ml-auto shrink-0 rounded-md bg-accent/10 border border-accent/20 px-2 py-0.5 text-[10px] font-medium text-accent">
-                {calendarDateRange(subject.firstCalendarDate, subject.lastCalendarDate)}
+              <span class="ml-auto shrink-0 rounded-md bg-accent/10 border border-accent/20 px-2 py-0.5 text-[10px] font-mono font-medium text-accent">
+                {dayRange(subject.dayNumbers)}
               </span>
               <svg
                 class="h-4 w-4 shrink-0 text-text-muted transition-transform {isExpanded ? 'rotate-180' : ''}"
@@ -252,29 +261,29 @@
                   <div class="rounded-lg bg-bg-primary border border-border/50 px-3 py-2.5">
                     <div class="flex items-center justify-between mb-1.5">
                       <div class="flex items-center gap-2 min-w-0">
-                        <span class="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-mono font-medium text-accent">
-                          {#if entry.calendarDates.length > 0}
-                            {formatISODateShort(entry.calendarDates[0])}
-                          {:else}
-                            Tag {entry.dayNumber}
-                          {/if}
-                        </span>
+                        <button
+                          onclick={() => openDayUrl(entry.ambossUrl, entry.dayNumber)}
+                          class="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-mono font-medium text-accent hover:bg-accent/20 transition-colors cursor-pointer"
+                        >
+                          Tag {entry.dayNumber}
+                        </button>
                         <span class="text-xs font-medium text-text-secondary truncate">{entry.subTopic}</span>
                       </div>
-                      <span class="shrink-0 text-[10px] text-text-muted">{entry.questionCount} Fragen</span>
+                      <div class="flex items-center gap-2 shrink-0">
+                        <span class="text-[10px] text-text-muted">{entry.questionCount} Fragen</span>
+                        <span class="text-[10px] text-text-muted">&middot; ~{entry.estimatedHours}h</span>
+                      </div>
                     </div>
 
                     {#if entry.chapters.length > 0}
                       <div class="flex flex-wrap gap-1.5 mt-1.5">
                         {#each entry.chapters as chapter}
-                          <a
-                            href={ambossSearchUrl(chapter)}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            onclick={() => openChapter(chapter, entry.chapterUrls)}
                             class="rounded-md bg-bg-secondary border border-border/50 px-2 py-0.5 text-[11px] text-text-secondary hover:text-accent hover:border-accent/30 transition-colors cursor-pointer"
                           >
                             {chapter}
-                          </a>
+                          </button>
                         {/each}
                       </div>
                     {/if}

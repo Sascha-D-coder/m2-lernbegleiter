@@ -11,6 +11,7 @@
   // Local form values
   let planStartDate = $state("");
   let examDate = $state("");
+  let planEndDate = $state("");
   let semesterEnd = $state("");
   let juneVacStart = $state("");
   let juneVacEnd = $state("");
@@ -31,6 +32,7 @@
   let saving = $state(false);
   let saved = $state(false);
   let regenerating = $state(false);
+  let justRegenerated = $state(false);
 
   // Sync from store on load
   $effect(() => {
@@ -38,6 +40,7 @@
       const s = settings;
       planStartDate = s.planStartDate;
       examDate = s.examDate;
+      planEndDate = s.planEndDate;
       semesterEnd = s.semesterEndDate;
       juneVacStart = s.juneVacationStart;
       juneVacEnd = s.juneVacationEnd;
@@ -118,6 +121,7 @@
     await saveSettings({
       planStartDate,
       examDate,
+      planEndDate,
       semesterEndDate: semesterEnd,
       juneVacationStart: juneVacStart,
       juneVacationEnd: juneVacEnd,
@@ -163,6 +167,7 @@
       });
       setCalendarDays(calendar);
       toastSuccess("Lernplan erfolgreich neu generiert!");
+      justRegenerated = true;
     } catch (error) {
       toastError("Plan-Generierung fehlgeschlagen!");
       console.error("Failed to regenerate plan:", error);
@@ -205,22 +210,28 @@
   <!-- Termine -->
   <div class="rounded-xl bg-bg-secondary border border-border p-5">
     <h3 class="text-base font-semibold text-text-primary mb-4">Termine</h3>
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid grid-cols-2 gap-4">
       <div>
         <label for="planStart" class="text-xs font-medium text-text-muted mb-1.5 block">Plan-Start</label>
         <input id="planStart" type="date" bind:value={planStartDate}
           class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
       </div>
       <div>
-        <label for="examDate" class="text-xs font-medium text-text-muted mb-1.5 block">Erster Klausurtag</label>
-        <input id="examDate" type="date" bind:value={examDate}
-          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
-        <p class="text-[10px] text-text-muted mt-1">M2 2026: 06.10.26–08.10.26</p>
-      </div>
-      <div>
-        <label for="semesterEnd" class="text-xs font-medium text-text-muted mb-1.5 block">Semesterende</label>
+        <label for="semesterEnd" class="text-xs font-medium text-text-muted mb-1.5 block">Semesterende (Vollzeit ab)</label>
         <input id="semesterEnd" type="date" bind:value={semesterEnd}
           class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
+      </div>
+      <div>
+        <label for="examDate" class="text-xs font-medium text-text-muted mb-1.5 block">Erster Klausurtag (M2)</label>
+        <input id="examDate" type="date" bind:value={examDate}
+          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
+        <p class="text-[10px] text-text-muted mt-1">M2 Herbst 2026: 06.10. – 08.10.2026 (3 Tage)</p>
+      </div>
+      <div>
+        <label for="planEnd" class="text-xs font-medium text-text-muted mb-1.5 block">Lernplan-Ende</label>
+        <input id="planEnd" type="date" bind:value={planEndDate}
+          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
+        <p class="text-[10px] text-text-muted mt-1">Letzter Lerntag vor dem Examen (inkl. Probeklausuren)</p>
       </div>
     </div>
 
@@ -409,9 +420,10 @@
     </button>
 
     <button
-      onclick={regeneratePlan}
-      disabled={regenerating}
-      class="rounded-lg border border-border bg-bg-primary px-6 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-border/30 disabled:opacity-50"
+      onclick={() => { justRegenerated = false; regeneratePlan(); }}
+      disabled={regenerating || justRegenerated}
+      class="rounded-lg px-6 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed
+        {justRegenerated ? 'bg-success/20 text-success border border-success/30' : 'border border-border bg-bg-primary text-text-primary hover:bg-border/30 disabled:opacity-50'}"
     >
       {#if regenerating}
         <span class="inline-flex items-center gap-2">
@@ -421,6 +433,8 @@
           </svg>
           Generiere...
         </span>
+      {:else if justRegenerated}
+        Plan generiert &#10003;
       {:else}
         Plan neu generieren
       {/if}

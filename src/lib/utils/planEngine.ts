@@ -27,8 +27,11 @@ export interface AmbossDay {
   subject: string;
   sub_topic: string;
   chapters: string[];
+  chapter_urls: Record<string, string>;
+  amboss_url: string;
   estimated_hours: number;
   question_count: number;
+  total_length: number;
   is_optional: boolean;
 }
 

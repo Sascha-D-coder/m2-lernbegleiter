@@ -45,8 +45,11 @@ export async function loadAmbossDays(): Promise<void> {
       subject: row.subject as string,
       sub_topic: (row.sub_topic as string) ?? "",
       chapters: JSON.parse((row.chapters as string) ?? "[]"),
+      chapter_urls: JSON.parse((row.chapter_urls as string) ?? "{}"),
+      amboss_url: (row.amboss_url as string) ?? "",
       estimated_hours: (row.estimated_hours as number) ?? 7,
       question_count: (row.question_count as number) ?? 80,
+      total_length: (row.total_length as number) ?? 0,
       is_optional: Boolean(row.is_optional),
     }));
   } catch (error) {
@@ -59,7 +62,8 @@ export async function loadCalendarDays(): Promise<void> {
     const db = await getDb();
     const rows = await db.select<Record<string, unknown>[]>(
       `SELECT c.*, a.day_number, a.subject, a.sub_topic, a.chapters,
-              a.estimated_hours, a.question_count, a.is_optional
+              a.chapter_urls, a.amboss_url,
+              a.estimated_hours, a.question_count, a.total_length, a.is_optional
        FROM calendar_days c
        LEFT JOIN amboss_days a ON c.amboss_day_id = a.day_number
        ORDER BY c.date`
@@ -77,8 +81,11 @@ export async function loadCalendarDays(): Promise<void> {
             subject: row.subject as string,
             sub_topic: (row.sub_topic as string) ?? "",
             chapters: JSON.parse((row.chapters as string) ?? "[]"),
+            chapter_urls: JSON.parse((row.chapter_urls as string) ?? "{}"),
+            amboss_url: (row.amboss_url as string) ?? "",
             estimated_hours: (row.estimated_hours as number) ?? 7,
             question_count: (row.question_count as number) ?? 80,
+            total_length: (row.total_length as number) ?? 0,
             is_optional: Boolean(row.is_optional),
           }
         : null,
@@ -106,15 +113,18 @@ export async function importAmbossPlan(
     for (let i = 0; i < days.length; i++) {
       const day = days[i];
       await db.execute(
-        `INSERT INTO amboss_days (day_number, subject, sub_topic, chapters, estimated_hours, question_count, is_optional, sort_order)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO amboss_days (day_number, subject, sub_topic, chapters, chapter_urls, amboss_url, estimated_hours, question_count, total_length, is_optional, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           day.day_number,
           day.subject,
           day.sub_topic,
           JSON.stringify(day.chapters),
+          JSON.stringify(day.chapter_urls ?? {}),
+          day.amboss_url ?? "",
           day.estimated_hours,
           day.question_count,
+          day.total_length ?? 0,
           day.is_optional ? 1 : 0,
           i + 1,
         ]
@@ -132,7 +142,7 @@ export async function setCalendarDays(days: CalendarDay[]): Promise<void> {
   planGenerated = true;
   updateTodayIndex();
 
-  // Persist to DB
+  // Persist to DB (each execute auto-commits; Widget is read-only so no race condition)
   try {
     const db = await getDb();
     await db.execute("DELETE FROM calendar_days");

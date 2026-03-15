@@ -11,6 +11,7 @@
   import { loadSettings, getSettings } from "$lib/stores/settingsStore.svelte";
   import { loadAmbossDays, loadCalendarDays, setCalendarDays, isPlanGenerated, importAmbossPlan } from "$lib/stores/planStore.svelte";
   import { startPolling } from "$lib/stores/ankiStore.svelte";
+  import { loadAllProgress } from "$lib/stores/progressStore.svelte";
   import { initNotifications, stopNotifications } from "$lib/services/notificationService";
   import { buildStudyPlan } from "$lib/utils/planEngine";
   import type { AmbossDay } from "$lib/utils/planEngine";
@@ -68,6 +69,7 @@
         await setCalendarDays(calendar);
       }
 
+      await loadAllProgress();
       startPolling();
       initNotifications();
     } catch (err) {

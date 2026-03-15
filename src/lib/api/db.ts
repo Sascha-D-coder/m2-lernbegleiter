@@ -253,4 +253,13 @@ const migrations = [
       CREATE INDEX IF NOT EXISTS idx_chapter_progress ON chapter_progress(amboss_day_number);
     `,
   },
+  {
+    name: "004_amboss_urls",
+    sql: `
+      ALTER TABLE amboss_days ADD COLUMN chapter_urls TEXT NOT NULL DEFAULT '{}';
+      ALTER TABLE amboss_days ADD COLUMN amboss_url TEXT NOT NULL DEFAULT '';
+      ALTER TABLE amboss_days ADD COLUMN total_length INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE settings ADD COLUMN plan_end_date TEXT DEFAULT '2026-10-05';
+    `,
+  },
 ];

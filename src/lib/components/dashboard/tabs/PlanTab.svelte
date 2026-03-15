@@ -8,6 +8,7 @@
     setCalendarDays,
   } from "$lib/stores/planStore.svelte";
   import { getSettings } from "$lib/stores/settingsStore.svelte";
+  import { isDayCompleted, isDayPartial } from "$lib/stores/progressStore.svelte";
   import { buildStudyPlan, type CalendarDay, type Phase } from "$lib/utils/planEngine";
   import { formatISODateShort } from "$lib/utils/dateUtils";
   import { toastSuccess, toastError, toastInfo, toastWarning } from "$lib/stores/toastStore.svelte";
@@ -16,6 +17,7 @@
   // Local state
   // ---------------------------------------------------------------------------
   let generating = $state(false);
+  let justGenerated = $state(false);
   let error = $state("");
   let selectedDayIndex = $state<number | null>(null);
   let activeView = $state<"calendar" | "list">("calendar");
@@ -83,32 +85,34 @@
   const SUBJECT_COLORS: Record<string, { bg: string; text: string }> = {
     "Innere Medizin": { bg: "bg-red-500/25", text: "text-red-400" },
     "Chirurgie": { bg: "bg-orange-500/25", text: "text-orange-400" },
-    "Anästhesiologie": { bg: "bg-emerald-500/25", text: "text-emerald-400" },
+    "Anästhesie": { bg: "bg-emerald-500/25", text: "text-emerald-400" },
     "Augenheilkunde": { bg: "bg-cyan-500/25", text: "text-cyan-400" },
     "Dermatologie": { bg: "bg-yellow-500/25", text: "text-yellow-400" },
-    "Gynäkologie & Geburtshilfe": { bg: "bg-pink-500/25", text: "text-pink-400" },
-    "Hals-Nasen-Ohren-Heilkunde": { bg: "bg-teal-500/25", text: "text-teal-400" },
-    "Orthopädie & Unfallchirurgie": { bg: "bg-amber-500/25", text: "text-amber-400" },
+    "Gynäkologie": { bg: "bg-pink-500/25", text: "text-pink-400" },
+    "HNO": { bg: "bg-teal-500/25", text: "text-teal-400" },
+    "Orthopädie": { bg: "bg-amber-500/25", text: "text-amber-400" },
     "Neurologie": { bg: "bg-blue-500/25", text: "text-blue-400" },
     "Psychiatrie": { bg: "bg-indigo-500/25", text: "text-indigo-400" },
     "Pädiatrie": { bg: "bg-green-500/25", text: "text-green-400" },
     "Radiologie": { bg: "bg-slate-500/25", text: "text-slate-400" },
-    "Notfallmedizin": { bg: "bg-rose-500/25", text: "text-rose-400" },
+    "Intensiv- und Notfallmedizin": { bg: "bg-rose-500/25", text: "text-rose-400" },
     "Urologie": { bg: "bg-lime-500/25", text: "text-lime-400" },
     "Pharmakologie": { bg: "bg-purple-500/25", text: "text-purple-400" },
-    "Klinische Chemie & Labormedizin": { bg: "bg-fuchsia-500/25", text: "text-fuchsia-400" },
+    "Infektiologie und Hygiene": { bg: "bg-violet-500/25", text: "text-violet-400" },
     "Rechtsmedizin": { bg: "bg-stone-500/25", text: "text-stone-400" },
-    "Arbeitsmedizin & Hygiene": { bg: "bg-zinc-500/25", text: "text-zinc-400" },
-    "Allgemeinmedizin": { bg: "bg-sky-500/25", text: "text-sky-400" },
-    "Mikrobiologie": { bg: "bg-violet-500/25", text: "text-violet-400" },
-    "Wiederholung": { bg: "bg-gray-500/25", text: "text-gray-400" },
-    "Generalprobe": { bg: "bg-red-600/25", text: "text-red-300" },
+    "Arbeits- und Umweltmedizin": { bg: "bg-zinc-500/25", text: "text-zinc-400" },
+    "Humangenetik": { bg: "bg-sky-500/25", text: "text-sky-400" },
+    "Pathologie": { bg: "bg-fuchsia-500/25", text: "text-fuchsia-400" },
+    "Epidemiologie": { bg: "bg-teal-600/25", text: "text-teal-300" },
+    "Sozialmedizin & Alternative Heilverfahren und Rehabilitation": { bg: "bg-zinc-600/25", text: "text-zinc-300" },
   };
 
   const DEFAULT_SUBJECT_STYLE = { bg: "bg-gray-500/20", text: "text-gray-400" };
 
   function subjectStyle(subject: string | undefined): { bg: string; text: string } {
     if (!subject) return DEFAULT_SUBJECT_STYLE;
+    if (subject.startsWith("Wiederholung")) return { bg: "bg-gray-500/25", text: "text-gray-400" };
+    if (subject.startsWith("Generalprobe")) return { bg: "bg-red-600/25", text: "text-red-300" };
     return SUBJECT_COLORS[subject] ?? DEFAULT_SUBJECT_STYLE;
   }
 
@@ -144,44 +148,46 @@
 
   // --- AMBOSS link helpers ---
 
-  async function openAmbossChapter(chapter: string) {
+  async function openDirectUrl(url: string, label: string) {
+    try {
+      const { openUrl: open } = await import("@tauri-apps/plugin-opener");
+      await open(url);
+      toastInfo(`Öffne ${label} in AMBOSS...`);
+    } catch {
+      window.open(url, "_blank");
+      toastInfo(`Öffne ${label} im Browser...`);
+    }
+  }
+
+  function openAmbossChapter(chapter: string, ambossDay?: import("$lib/utils/planEngine").AmbossDay | null) {
+    // Use direct URL from chapter_urls if available
+    const directUrl = ambossDay?.chapter_urls?.[chapter];
+    if (directUrl) {
+      openDirectUrl(directUrl, `"${chapter}"`);
+      return;
+    }
     if (!chapter) {
       toastWarning("Kein Kapitel verknüpft. Öffne AMBOSS manuell und suche das Thema.");
       return;
     }
-    const url = `https://next.amboss.com/de/search?q=${encodeURIComponent(chapter)}`;
-    try {
-      const { openUrl } = await import("@tauri-apps/plugin-opener");
-      await openUrl(url);
-      toastInfo(`Öffne "${chapter}" in AMBOSS...`);
-    } catch {
-      window.open(url, "_blank");
-      toastInfo(`Öffne "${chapter}" im Browser...`);
+    // Fallback to search
+    openDirectUrl(`https://next.amboss.com/de/search?q=${encodeURIComponent(chapter)}`, `"${chapter}"`);
+  }
+
+  function openAmbossDayUrl(ambossDay: import("$lib/utils/planEngine").AmbossDay) {
+    if (ambossDay.amboss_url) {
+      openDirectUrl(ambossDay.amboss_url, `Tag ${ambossDay.day_number}`);
+    } else {
+      openDirectUrl("https://next.amboss.com/de/questions", "AMBOSS-Kreuzsitzung");
     }
   }
 
-  async function openAmbossKreuzen() {
-    const url = "https://next.amboss.com/de/questions";
-    try {
-      const { openUrl } = await import("@tauri-apps/plugin-opener");
-      await openUrl(url);
-      toastInfo("Öffne AMBOSS-Kreuzsitzung...");
-    } catch {
-      window.open(url, "_blank");
-      toastInfo("Öffne AMBOSS-Kreuzsitzung im Browser...");
-    }
+  function openAmbossKreuzen() {
+    openDirectUrl("https://next.amboss.com/de/questions", "AMBOSS-Kreuzsitzung");
   }
 
-  async function openAmbossProbeklausur() {
-    const url = "https://next.amboss.com/de/exams";
-    try {
-      const { openUrl } = await import("@tauri-apps/plugin-opener");
-      await openUrl(url);
-      toastInfo("Öffne AMBOSS-Probeklausuren...");
-    } catch {
-      window.open(url, "_blank");
-      toastInfo("Öffne AMBOSS-Probeklausuren im Browser...");
-    }
+  function openAmbossProbeklausur() {
+    openDirectUrl("https://next.amboss.com/de/exams", "AMBOSS-Probeklausuren");
   }
 
   const MONTH_NAMES_DE = [
@@ -277,6 +283,7 @@
       const days = buildStudyPlan(ambossData, planConfig);
       setCalendarDays(days);
       toastSuccess("Lernplan erfolgreich generiert!");
+      justGenerated = true;
     } catch (e: unknown) {
       error = e instanceof Error ? e.message : "Unbekannter Fehler";
       toastError(`Plan-Generierung fehlgeschlagen: ${error}`);
@@ -368,9 +375,10 @@
       {/if}
 
       <button
-        onclick={generatePlan}
-        disabled={generating}
-        class="rounded-lg bg-accent px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
+        onclick={() => { justGenerated = false; generatePlan(); }}
+        disabled={generating || justGenerated}
+        class="rounded-lg px-6 py-3 text-sm font-medium transition-colors disabled:cursor-not-allowed
+          {justGenerated ? 'bg-success/20 text-success border border-success/30' : 'bg-accent text-white hover:bg-accent-hover disabled:opacity-50'}"
       >
         {#if generating}
           <span class="inline-flex items-center gap-2">
@@ -380,6 +388,8 @@
             </svg>
             Plan wird generiert...
           </span>
+        {:else if justGenerated}
+          Plan generiert &#10003;
         {:else}
           {calendarDays.length > 0 ? "Plan neu generieren" : "Plan generieren"}
         {/if}
@@ -478,6 +488,8 @@
                     {@const hasAmboss = cell.ambossDay !== null}
                     {@const isSelected = selectedDayIndex !== null && calendarDays[selectedDayIndex]?.date === cell.date}
                     {@const isExam = isExamDate(cell.date)}
+                    {@const completed = hasAmboss && isDayCompleted(cell.date)}
+                    {@const partial = hasAmboss && isDayPartial(cell.date)}
                     <button
                       onclick={() => {
                         const idx = calendarDays.findIndex((d) => d.date === cell.date);
@@ -488,6 +500,7 @@
                         {isToday ? 'ring-2 ring-accent ring-offset-1 ring-offset-bg-primary' : ''}
                         {isSelected ? 'ring-2 ring-text-primary' : ''}
                         {isExam ? 'ring-2 ring-danger' : ''}
+                        {completed ? 'ring-1 ring-success/50' : ''}
                         hover:brightness-125 cursor-pointer"
                     >
                       <span class="text-xs leading-none mt-0.5 {isExam ? 'font-black text-danger' : 'font-medium'}">
@@ -500,13 +513,22 @@
                       {:else if cell.phase === "exam-prep"}
                         <span class="text-[9px] leading-none mt-1 opacity-70">Probe</span>
                       {:else if hasAmboss}
-                        <span class="text-[9px] leading-tight mt-0.5 line-clamp-2 w-full overflow-hidden">
-                          {cell.ambossDay!.subject.substring(0, 4)}
-                        </span>
-                        {#if cell.splitPart === "reading"}
-                          <span class="text-[8px] opacity-60">R</span>
-                        {:else if cell.splitPart === "kreuzen"}
-                          <span class="text-[8px] opacity-60">K</span>
+                        {#if completed}
+                          <span class="text-[10px] leading-none mt-0.5 text-success">&#10003;</span>
+                        {:else if partial}
+                          <span class="text-[9px] leading-tight mt-0.5 line-clamp-2 w-full overflow-hidden">
+                            {cell.ambossDay!.subject.substring(0, 4)}
+                          </span>
+                          <span class="text-[8px] text-warning">&#189;</span>
+                        {:else}
+                          <span class="text-[9px] leading-tight mt-0.5 line-clamp-2 w-full overflow-hidden">
+                            {cell.ambossDay!.subject.substring(0, 4)}
+                          </span>
+                          {#if cell.splitPart === "reading"}
+                            <span class="text-[8px] opacity-60">R</span>
+                          {:else if cell.splitPart === "kreuzen"}
+                            <span class="text-[8px] opacity-60">K</span>
+                          {/if}
                         {/if}
                       {:else if cell.phase === "weekend"}
                         <span class="text-[9px] leading-none mt-1 opacity-40">WE</span>
@@ -531,6 +553,7 @@
             <thead class="sticky top-0 bg-bg-secondary border-b border-border">
               <tr class="text-xs text-text-muted uppercase tracking-wider">
                 <th class="text-left px-2 py-2 font-medium w-6"></th>
+                <th class="text-center px-2 py-2 font-medium w-8">&#10003;</th>
                 <th class="text-left px-3 py-2 font-medium">Datum</th>
                 <th class="text-left px-3 py-2 font-medium">Tag</th>
                 <th class="text-left px-3 py-2 font-medium">Fach</th>
@@ -545,6 +568,8 @@
                 {@const style = cellStyle(day)}
                 {@const isSelected = selectedDayIndex !== null && calendarDays[selectedDayIndex]?.date === day.date}
                 {@const isDragOver = dragOverIndex === idx && dragSourceIndex !== null && dragSourceIndex !== idx}
+                {@const dayDone = isDayCompleted(day.date)}
+                {@const dayPartial = isDayPartial(day.date)}
                 <tr
                   draggable="true"
                   ondragstart={() => handleDragStart(idx)}
@@ -567,6 +592,15 @@
                       <circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/>
                     </svg>
                   </td>
+                  <td class="px-2 py-2 text-center">
+                    {#if dayDone}
+                      <span class="text-success text-sm">&#10003;</span>
+                    {:else if dayPartial}
+                      <span class="text-warning text-sm">&#189;</span>
+                    {:else}
+                      <span class="text-text-muted/30 text-sm">&#9711;</span>
+                    {/if}
+                  </td>
                   <td class="px-3 py-2 whitespace-nowrap">
                     <span class="text-text-secondary">
                       {formatISODateShort(day.date)}
@@ -580,7 +614,7 @@
                   <td class="px-3 py-2 text-text-primary font-medium truncate max-w-[120px]">
                     {#if day.ambossDay}
                       <button
-                        onclick={(e: MouseEvent) => { e.stopPropagation(); openAmbossChapter(day.ambossDay!.chapters?.[0] ?? day.ambossDay!.subject); }}
+                        onclick={(e: MouseEvent) => { e.stopPropagation(); openAmbossDayUrl(day.ambossDay!); }}
                         class="hover:text-accent transition-colors"
                       >
                         {day.ambossDay.subject}
@@ -635,7 +669,7 @@
               <div class="flex flex-wrap gap-1.5">
                 {#each sel.ambossDay.chapters as chapter}
                   <button
-                    onclick={() => openAmbossChapter(chapter)}
+                    onclick={() => openAmbossChapter(chapter, sel.ambossDay)}
                     class="rounded-md bg-bg-primary border border-border/50 px-2 py-0.5 text-xs text-text-secondary hover:text-accent hover:border-accent/40 transition-colors cursor-pointer"
                   >
                     {chapter}
@@ -648,7 +682,7 @@
           <div class="flex flex-wrap gap-2 mt-3">
             {#if sel.splitPart === "reading" || sel.splitPart === "both"}
               <button
-                onclick={() => openAmbossChapter(sel.ambossDay!.chapters[0] ?? sel.ambossDay!.subject)}
+                onclick={() => openAmbossDayUrl(sel.ambossDay!)}
                 class="rounded-md bg-accent/15 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/25 transition-colors cursor-pointer"
               >
                 Kapitel lesen

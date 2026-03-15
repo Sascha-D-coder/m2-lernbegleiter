@@ -3,6 +3,7 @@ import { getDb } from "$lib/api/db";
 export interface Settings {
   planStartDate: string;
   examDate: string;
+  planEndDate: string;
   semesterEndDate: string;
   juneVacationStart: string;
   juneVacationEnd: string;
@@ -26,6 +27,7 @@ export interface Settings {
 const defaultSettings: Settings = {
   planStartDate: "2026-04-06",
   examDate: "2026-10-06",
+  planEndDate: "2026-10-05",
   semesterEndDate: "2026-07-20",
   juneVacationStart: "2026-06-01",
   juneVacationEnd: "2026-06-14",
@@ -68,6 +70,7 @@ export async function loadSettings(): Promise<void> {
       settings = {
         planStartDate: (row.plan_start_date as string) ?? defaultSettings.planStartDate,
         examDate: (row.exam_date as string) ?? defaultSettings.examDate,
+        planEndDate: (row.plan_end_date as string) ?? defaultSettings.planEndDate,
         semesterEndDate:
           (row.semester_end_date as string) ?? defaultSettings.semesterEndDate,
         juneVacationStart:
@@ -130,6 +133,7 @@ export async function saveSettings(
       `UPDATE settings SET
         plan_start_date = ?,
         exam_date = ?,
+        plan_end_date = ?,
         semester_end_date = ?,
         june_vacation_start = ?,
         june_vacation_end = ?,
@@ -153,6 +157,7 @@ export async function saveSettings(
       [
         settings.planStartDate,
         settings.examDate,
+        settings.planEndDate,
         settings.semesterEndDate,
         settings.juneVacationStart,
         settings.juneVacationEnd,

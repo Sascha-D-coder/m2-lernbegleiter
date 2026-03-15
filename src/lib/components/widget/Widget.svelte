@@ -1,13 +1,12 @@
 <script lang="ts">
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { invoke } from "@tauri-apps/api/core";
-  import { getTodayCalendarDay, getTodayAmbossDay, getProgressPercent, getCurrentDayNumber, getTotalStudyDays, isPlanGenerated, getCalendarDays, loadAmbossDays, setCalendarDays } from "$lib/stores/planStore.svelte";
+  import { getTodayCalendarDay, getTodayAmbossDay, getProgressPercent, getCurrentDayNumber, getTotalStudyDays, isPlanGenerated, getCalendarDays, loadAmbossDays, loadCalendarDays } from "$lib/stores/planStore.svelte";
   import { loadSettings, getSettings } from "$lib/stores/settingsStore.svelte";
   import { getCardsDueCount_, startPolling } from "$lib/stores/ankiStore.svelte";
   import { initNotifications, stopNotifications } from "$lib/services/notificationService";
-  import { buildStudyPlan } from "$lib/utils/planEngine";
-  import type { AmbossDay } from "$lib/utils/planEngine";
   import { getDb } from "$lib/api/db";
+  import { loadAllProgress } from "$lib/stores/progressStore.svelte";
   import DayProgress from "./DayProgress.svelte";
   import QuickStats from "./QuickStats.svelte";
 
@@ -82,6 +81,7 @@
   async function initializeApp() {
     await loadSettings();
     await loadAmbossDays();
+    await loadCalendarDays();
 
     const settings = getSettings();
 
@@ -89,26 +89,9 @@
     if (typeof document !== "undefined") {
       document.documentElement.setAttribute("data-theme", settings.theme);
     }
-    if (!isPlanGenerated()) {
-      try {
-        const resp = await fetch('/amboss-plan.json');
-        const days: AmbossDay[] = await resp.json();
-        const calendar = buildStudyPlan(days, {
-          examDate: settings.examDate,
-          semesterEndDate: settings.semesterEndDate,
-          juneVacation: { start: settings.juneVacationStart, end: settings.juneVacationEnd },
-          septVacation: { start: settings.septVacationStart, end: settings.septVacationEnd },
-          weekendsOff: settings.weekendsOff,
-          semesterHoursPerDay: settings.semesterHoursPerDay,
-          fulltimeHoursPerDay: settings.fulltimeHoursPerDay,
-          pharmaPrioritized: settings.pharmaPrioritized,
-        });
-        setCalendarDays(calendar);
-      } catch (err) {
-        console.error("Failed to build plan:", err);
-      }
-    }
 
+    // Widget is read-only — plan generation only happens in Dashboard
+    await loadAllProgress();
     startPolling();
     initNotifications();
     await loadStreak();
@@ -297,7 +280,7 @@
   .widget-outer {
     width: 100%;
     height: 100vh;
-    padding: 4px;
+    padding: 0;
     background: transparent;
   }
 
@@ -305,7 +288,7 @@
     background: var(--color-bg-widget);
     border-radius: 12px;
     border: 1px solid rgba(128, 128, 128, 0.15);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
     overflow: hidden;
     height: 100%;
   }

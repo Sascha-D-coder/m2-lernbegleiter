@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getTodayCalendarDay, getTodayAmbossDay, getProgressPercent, getCurrentDayNumber, getTotalStudyDays, getCalendarDays, isPlanGenerated } from "$lib/stores/planStore.svelte";
   import { getCardsDueCount_, isConnected as isAnkiConnected } from "$lib/stores/ankiStore.svelte";
+  import { updateProgressLocal } from "$lib/stores/progressStore.svelte";
   import { getDb } from "$lib/api/db";
   import { formatDateLong } from "$lib/utils/dateUtils";
 
@@ -98,12 +99,16 @@
 
   async function toggleReading() {
     readingDone = !readingDone;
+    const today = new Date().toISOString().split("T")[0];
+    updateProgressLocal(today, readingDone, kreuzenDone);
     await saveProgress();
     if (readingDone) checkDayComplete();
   }
 
   async function toggleKreuzen() {
     kreuzenDone = !kreuzenDone;
+    const today = new Date().toISOString().split("T")[0];
+    updateProgressLocal(today, readingDone, kreuzenDone);
     await saveProgress();
     if (kreuzenDone) checkDayComplete();
   }
@@ -159,44 +164,47 @@
 
   import { toastInfo, toastWarning } from "$lib/stores/toastStore.svelte";
 
-  async function openAmbossChapter(chapter: string) {
+  async function openUrl(url: string, label: string) {
+    try {
+      const { openUrl: open } = await import("@tauri-apps/plugin-opener");
+      await open(url);
+      toastInfo(`Öffne ${label} in AMBOSS...`);
+    } catch {
+      window.open(url, "_blank");
+      toastInfo(`Öffne ${label} im Browser...`);
+    }
+  }
+
+  function openAmbossChapter(chapter: string) {
+    // Use direct URL from chapter_urls if available
+    const directUrl = todayAmboss?.chapter_urls?.[chapter];
+    if (directUrl) {
+      openUrl(directUrl, `"${chapter}"`);
+      return;
+    }
     if (!chapter) {
       toastWarning("Kein Kapitel verknüpft. Öffne AMBOSS manuell und suche das Thema.");
       return;
     }
-    const url = `https://next.amboss.com/de/search?q=${encodeURIComponent(chapter)}`;
-    try {
-      const { openUrl } = await import("@tauri-apps/plugin-opener");
-      await openUrl(url);
-      toastInfo(`Öffne "${chapter}" in AMBOSS...`);
-    } catch {
-      window.open(url, "_blank");
-      toastInfo(`Öffne "${chapter}" im Browser...`);
+    // Fallback to search
+    openUrl(`https://next.amboss.com/de/search?q=${encodeURIComponent(chapter)}`, `"${chapter}"`);
+  }
+
+  function openAmbossDayUrl() {
+    const url = todayAmboss?.amboss_url;
+    if (url) {
+      openUrl(url, `Tag ${todayAmboss!.day_number}`);
+    } else {
+      openUrl("https://next.amboss.com/de/questions", "AMBOSS-Kreuzsitzung");
     }
   }
 
-  async function openAmbossKreuzen() {
-    const url = "https://next.amboss.com/de/questions";
-    try {
-      const { openUrl } = await import("@tauri-apps/plugin-opener");
-      await openUrl(url);
-      toastInfo("Öffne AMBOSS-Kreuzsitzung...");
-    } catch {
-      window.open(url, "_blank");
-      toastInfo("Öffne AMBOSS-Kreuzsitzung im Browser...");
-    }
+  function openAmbossKreuzen() {
+    openUrl("https://next.amboss.com/de/questions", "AMBOSS-Kreuzsitzung");
   }
 
-  async function openAmbossProbeklausur() {
-    const url = "https://next.amboss.com/de/exams";
-    try {
-      const { openUrl } = await import("@tauri-apps/plugin-opener");
-      await openUrl(url);
-      toastInfo("Öffne AMBOSS-Probeklausuren...");
-    } catch {
-      window.open(url, "_blank");
-      toastInfo("Öffne AMBOSS-Probeklausuren im Browser...");
-    }
+  function openAmbossProbeklausur() {
+    openUrl("https://next.amboss.com/de/exams", "AMBOSS-Probeklausuren");
   }
 </script>
 
@@ -401,7 +409,7 @@
       <div class="grid grid-cols-2 gap-4">
         <!-- Reading Card -->
         <button
-          onclick={() => openAmbossChapter(todayAmboss!.chapters[0] ?? todayAmboss!.subject)}
+          onclick={openAmbossDayUrl}
           class="rounded-xl bg-bg-secondary border border-border p-4 text-left transition-colors hover:border-accent/40 cursor-pointer group
             {readingDone ? 'border-success/40 bg-success/5' : ''}"
         >
