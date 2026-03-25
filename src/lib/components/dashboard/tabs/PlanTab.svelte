@@ -117,6 +117,9 @@
   }
 
   function cellStyle(cell: CalendarDay): { bg: string; text: string } {
+    if (cell.pharmaReview) {
+      return { bg: "bg-purple-500/20", text: "text-purple-400" };
+    }
     if (cell.ambossDay) {
       return subjectStyle(cell.ambossDay.subject);
     }
@@ -432,6 +435,10 @@
           <span class="text-[10px] text-text-secondary">Urlaub</span>
         </div>
         <div class="flex items-center gap-1.5">
+          <span class="inline-block h-3 w-3 rounded-sm bg-purple-500/20 border border-purple-400/20"></span>
+          <span class="text-[10px] text-text-secondary">Pharma &#8635;</span>
+        </div>
+        <div class="flex items-center gap-1.5">
           <span class="inline-block h-3 w-3 rounded-sm bg-red-500/20 border border-red-400/20"></span>
           <span class="text-[10px] text-text-secondary">Probeklausuren</span>
         </div>
@@ -512,6 +519,9 @@
                         <span class="text-[9px] leading-none mt-1 opacity-70">Url.</span>
                       {:else if cell.phase === "exam-prep"}
                         <span class="text-[9px] leading-none mt-1 opacity-70">Probe</span>
+                      {:else if cell.pharmaReview}
+                        <span class="text-[9px] leading-none mt-0.5 font-medium">Phar</span>
+                        <span class="text-[8px] opacity-70">&#8635;</span>
                       {:else if hasAmboss}
                         {#if completed}
                           <span class="text-[10px] leading-none mt-0.5 text-success">&#10003;</span>
@@ -723,7 +733,9 @@
             </div>
           {:else}
             <p class="text-sm text-text-muted mt-1">
-              {#if sel.phase === "vacation-june" || sel.phase === "vacation-sept"}
+              {#if sel.pharmaReview}
+                Pharmakologie-Wiederholung &ndash; Kapitel aus Tagen {sel.pharmaReview.originalDayNumbers.join(", ")} wiederholen
+              {:else if sel.phase === "vacation-june" || sel.phase === "vacation-sept"}
                 Urlaub &ndash; Nur Anki ({sel.ankiTarget} Karten)
               {:else if sel.phase === "weekend"}
                 Wochenende &ndash; Leichtes Anki ({sel.ankiTarget} Karten)

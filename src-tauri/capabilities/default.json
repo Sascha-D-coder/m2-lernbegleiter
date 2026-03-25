@@ -36,6 +36,11 @@
           "name": "curl",
           "cmd": "curl",
           "args": true
+        },
+        {
+          "name": "open",
+          "cmd": "open",
+          "args": true
         }
       ]
     },
@@ -45,6 +50,11 @@
         {
           "name": "curl",
           "cmd": "curl",
+          "args": true
+        },
+        {
+          "name": "open",
+          "cmd": "open",
           "args": true
         }
       ]

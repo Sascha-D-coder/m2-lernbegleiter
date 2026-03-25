@@ -262,4 +262,37 @@ const migrations = [
       ALTER TABLE settings ADD COLUMN plan_end_date TEXT DEFAULT '2026-10-05';
     `,
   },
+  {
+    name: "005_vacation_days",
+    sql: `
+      CREATE TABLE IF NOT EXISTS vacation_days (
+        id INTEGER PRIMARY KEY,
+        date TEXT UNIQUE NOT NULL,
+        type TEXT NOT NULL DEFAULT 'anki-only'
+      );
+
+      -- Migrate existing vacation ranges into individual days
+      INSERT OR IGNORE INTO vacation_days (date, type)
+      SELECT date(s.june_vacation_start, '+' || n || ' days'), 'anki-only'
+      FROM settings s,
+           (WITH RECURSIVE cnt(n) AS (SELECT 0 UNION ALL SELECT n+1 FROM cnt WHERE n < 60)
+            SELECT n FROM cnt) seq
+      WHERE s.id = 1
+        AND s.june_vacation_start IS NOT NULL
+        AND s.june_vacation_end IS NOT NULL
+        AND date(s.june_vacation_start, '+' || seq.n || ' days') <= s.june_vacation_end;
+
+      INSERT OR IGNORE INTO vacation_days (date, type)
+      SELECT date(s.sept_vacation_start, '+' || n || ' days'), 'full-rest'
+      FROM settings s,
+           (WITH RECURSIVE cnt(n) AS (SELECT 0 UNION ALL SELECT n+1 FROM cnt WHERE n < 60)
+            SELECT n FROM cnt) seq
+      WHERE s.id = 1
+        AND s.sept_vacation_start IS NOT NULL
+        AND s.sept_vacation_end IS NOT NULL
+        AND date(s.sept_vacation_start, '+' || seq.n || ' days') <= s.sept_vacation_end;
+
+      CREATE INDEX IF NOT EXISTS idx_vacation_date ON vacation_days(date);
+    `,
+  },
 ];

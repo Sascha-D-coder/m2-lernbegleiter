@@ -3,6 +3,7 @@ import {
   findM2Decks,
   getCardsDueCount,
   getDeckStats,
+  getUnseenCountPerDeck,
   type DeckStats,
 } from "$lib/api/ankiConnect";
 
@@ -10,6 +11,7 @@ let connected = $state(false);
 let deckNames = $state<string[]>([]);
 let cardsDue = $state(0);
 let deckStatsMap = $state<Record<string, DeckStats>>({});
+let unseenMap = $state<Record<string, number>>({});
 let lastSynced = $state<Date | null>(null);
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -33,6 +35,10 @@ export function getLastSynced(): Date | null {
   return lastSynced;
 }
 
+export function getUnseenMap(): Record<string, number> {
+  return unseenMap;
+}
+
 export async function syncAnki(): Promise<void> {
   try {
     connected = await checkConnection();
@@ -53,6 +59,13 @@ export async function syncAnki(): Promise<void> {
         } catch {
           // Individual deck stats failure is non-critical
         }
+      }
+
+      // Get unseen (new) card counts for leaf decks
+      try {
+        unseenMap = await getUnseenCountPerDeck(deckNames);
+      } catch {
+        // Non-critical
       }
     }
 

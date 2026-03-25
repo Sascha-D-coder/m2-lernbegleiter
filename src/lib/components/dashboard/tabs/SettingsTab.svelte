@@ -1,8 +1,13 @@
 <script lang="ts">
-  import { getSettings, loadSettings, saveSettings, isLoaded } from "$lib/stores/settingsStore.svelte";
+  import {
+    getSettings, loadSettings, saveSettings, isLoaded,
+    getVacationDays, addVacationDay, addVacationRange, removeVacationDay, clearAllVacationDays,
+    type VacationDay,
+  } from "$lib/stores/settingsStore.svelte";
   import { setCalendarDays, importAmbossPlan, getAmbossDays } from "$lib/stores/planStore.svelte";
   import { buildStudyPlan } from "$lib/utils/planEngine";
   import type { AmbossDay } from "$lib/utils/planEngine";
+  import { LLM_PROVIDERS, type LLMProvider } from "$lib/api/llm";
   import { toastSuccess, toastError } from "$lib/stores/toastStore.svelte";
 
   let loaded = $derived(isLoaded());
@@ -13,10 +18,13 @@
   let examDate = $state("");
   let planEndDate = $state("");
   let semesterEnd = $state("");
-  let juneVacStart = $state("");
-  let juneVacEnd = $state("");
-  let septVacStart = $state("");
-  let septVacEnd = $state("");
+  // Vacation UI state
+  let vacDays = $derived(getVacationDays());
+  let newVacDate = $state("");
+  let newVacRangeStart = $state("");
+  let newVacRangeEnd = $state("");
+  let newVacType = $state<VacationDay["type"]>("anki-only");
+  let vacMode = $state<"single" | "range">("single");
   let semesterHours = $state(2.5);
   let fulltimeHours = $state(7);
   let pharmaPriority = $state(true);
@@ -24,6 +32,10 @@
   let llmProvider = $state("claude");
   let llmApiKey = $state("");
   let llmModel = $state("claude-sonnet-4-5-20250929");
+
+  const providerEntries = Object.entries(LLM_PROVIDERS) as [LLMProvider, typeof LLM_PROVIDERS[LLMProvider]][];
+  let providerMeta = $derived(LLM_PROVIDERS[llmProvider as LLMProvider] ?? LLM_PROVIDERS.claude);
+
   let notificationEnabled = $state(true);
   let morningTime = $state("08:00");
   let eveningTime = $state("20:00");
@@ -42,10 +54,6 @@
       examDate = s.examDate;
       planEndDate = s.planEndDate;
       semesterEnd = s.semesterEndDate;
-      juneVacStart = s.juneVacationStart;
-      juneVacEnd = s.juneVacationEnd;
-      septVacStart = s.septVacationStart;
-      septVacEnd = s.septVacationEnd;
       semesterHours = s.semesterHoursPerDay;
       fulltimeHours = s.fulltimeHoursPerDay;
       pharmaPriority = s.pharmaPrioritized;
@@ -123,10 +131,6 @@
       examDate,
       planEndDate,
       semesterEndDate: semesterEnd,
-      juneVacationStart: juneVacStart,
-      juneVacationEnd: juneVacEnd,
-      septVacationStart: septVacStart,
-      septVacationEnd: septVacEnd,
       semesterHoursPerDay: semesterHours,
       fulltimeHoursPerDay: fulltimeHours,
       weekendsOff,
@@ -158,8 +162,9 @@
         startDate: planStartDate,
         examDate,
         semesterEndDate: semesterEnd,
-        juneVacation: { start: juneVacStart, end: juneVacEnd },
-        septVacation: { start: septVacStart, end: septVacEnd },
+        juneVacation: { start: "", end: "" },
+        septVacation: { start: "", end: "" },
+        vacationDays: vacDays,
         weekendsOff,
         semesterHoursPerDay: semesterHours,
         fulltimeHoursPerDay: fulltimeHours,
@@ -249,29 +254,98 @@
 
   <!-- Urlaub -->
   <div class="rounded-xl bg-bg-secondary border border-border p-5">
-    <h3 class="text-base font-semibold text-text-primary mb-4">Urlaub</h3>
-    <div class="grid grid-cols-2 gap-4">
+    <div class="flex items-center justify-between mb-4">
       <div>
-        <label for="juneStart" class="text-xs font-medium text-text-muted mb-1.5 block">Juni-Urlaub Start</label>
-        <input id="juneStart" type="date" bind:value={juneVacStart}
-          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
+        <h3 class="text-base font-semibold text-text-primary">Urlaub</h3>
+        <p class="text-xs text-text-muted mt-0.5">Optional – Tage ohne AMBOSS-Lerninhalte</p>
       </div>
-      <div>
-        <label for="juneEnd" class="text-xs font-medium text-text-muted mb-1.5 block">Juni-Urlaub Ende</label>
-        <input id="juneEnd" type="date" bind:value={juneVacEnd}
-          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
+      {#if vacDays.length > 0}
+        <button onclick={clearAllVacationDays}
+          class="text-[10px] text-danger/70 hover:text-danger transition-colors">
+          Alle entfernen
+        </button>
+      {/if}
+    </div>
+
+    <!-- Add vacation days -->
+    <div class="space-y-3 mb-4">
+      <div class="flex gap-2">
+        <button onclick={() => vacMode = "single"}
+          class="px-3 py-1 text-xs rounded-lg transition-colors {vacMode === 'single' ? 'bg-accent/15 text-accent font-medium' : 'bg-bg-primary text-text-muted hover:text-text-secondary'}">
+          Einzelner Tag
+        </button>
+        <button onclick={() => vacMode = "range"}
+          class="px-3 py-1 text-xs rounded-lg transition-colors {vacMode === 'range' ? 'bg-accent/15 text-accent font-medium' : 'bg-bg-primary text-text-muted hover:text-text-secondary'}">
+          Zeitraum
+        </button>
       </div>
-      <div>
-        <label for="septStart" class="text-xs font-medium text-text-muted mb-1.5 block">September-Urlaub Start</label>
-        <input id="septStart" type="date" bind:value={septVacStart}
-          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
-      </div>
-      <div>
-        <label for="septEnd" class="text-xs font-medium text-text-muted mb-1.5 block">September-Urlaub Ende</label>
-        <input id="septEnd" type="date" bind:value={septVacEnd}
-          class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
+
+      <div class="flex items-end gap-2">
+        {#if vacMode === "single"}
+          <div class="flex-1">
+            <label for="vacDate" class="text-xs font-medium text-text-muted mb-1.5 block">Datum</label>
+            <input id="vacDate" type="date" bind:value={newVacDate}
+              class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
+          </div>
+        {:else}
+          <div class="flex-1">
+            <label for="vacRangeStart" class="text-xs font-medium text-text-muted mb-1.5 block">Von</label>
+            <input id="vacRangeStart" type="date" bind:value={newVacRangeStart}
+              class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
+          </div>
+          <div class="flex-1">
+            <label for="vacRangeEnd" class="text-xs font-medium text-text-muted mb-1.5 block">Bis</label>
+            <input id="vacRangeEnd" type="date" bind:value={newVacRangeEnd}
+              class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary" />
+          </div>
+        {/if}
+
+        <div class="w-36">
+          <label for="vacType" class="text-xs font-medium text-text-muted mb-1.5 block">Typ</label>
+          <select id="vacType" bind:value={newVacType}
+            class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary">
+            <option value="anki-only">Nur Anki</option>
+            <option value="full-rest">Komplett frei</option>
+          </select>
+        </div>
+
+        <button
+          onclick={async () => {
+            if (vacMode === "single" && newVacDate) {
+              await addVacationDay(newVacDate, newVacType);
+              newVacDate = "";
+            } else if (vacMode === "range" && newVacRangeStart && newVacRangeEnd) {
+              await addVacationRange(newVacRangeStart, newVacRangeEnd, newVacType);
+              newVacRangeStart = "";
+              newVacRangeEnd = "";
+            }
+          }}
+          class="shrink-0 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+        >
+          +
+        </button>
       </div>
     </div>
+
+    <!-- List of vacation days as chips -->
+    {#if vacDays.length > 0}
+      <div class="flex flex-wrap gap-1.5">
+        {#each vacDays as day}
+          <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs
+            {day.type === 'full-rest' ? 'bg-amber-500/15 text-amber-400' : 'bg-blue-500/15 text-blue-400'}">
+            {new Date(day.date + "T00:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
+            <span class="text-[9px] opacity-60">{day.type === "full-rest" ? "frei" : "anki"}</span>
+            <button onclick={() => removeVacationDay(day.date)}
+              class="ml-0.5 opacity-50 hover:opacity-100 transition-opacity">&times;</button>
+          </span>
+        {/each}
+      </div>
+      <p class="text-[10px] text-text-muted mt-2">
+        {vacDays.filter(d => d.type === "anki-only").length} Tage nur Anki · {vacDays.filter(d => d.type === "full-rest").length} Tage komplett frei
+      </p>
+    {:else}
+      <p class="text-xs text-text-muted">Kein Urlaub geplant. Du kannst jederzeit Tage hinzufügen.</p>
+    {/if}
   </div>
 
   <!-- Lernzeit -->
@@ -323,33 +397,31 @@
       <div>
         <label for="llmProvider" class="text-xs font-medium text-text-muted mb-1.5 block">LLM Provider</label>
         <select id="llmProvider" bind:value={llmProvider}
+          onchange={() => { llmModel = providerMeta.models[0]?.value ?? ""; }}
           class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary">
-          <option value="claude">Claude API</option>
-          <option value="ollama">Ollama (Lokal)</option>
+          {#each providerEntries as [key, meta]}
+            <option value={key}>{meta.label}</option>
+          {/each}
         </select>
       </div>
 
-      {#if llmProvider === "claude"}
+      {#if providerMeta.needsApiKey}
         <div>
           <label for="apiKey" class="text-xs font-medium text-text-muted mb-1.5 block">API Key</label>
-          <input id="apiKey" type="password" bind:value={llmApiKey} placeholder="sk-ant-..."
+          <input id="apiKey" type="password" bind:value={llmApiKey} placeholder={providerMeta.keyPlaceholder}
             class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/40" />
         </div>
 
-        <!-- API Key Explanation -->
         <div class="rounded-lg bg-accent/5 border border-accent/15 p-3">
-          <h4 class="text-xs font-semibold text-accent mb-2">So erstellst du einen Claude API Key:</h4>
+          <h4 class="text-xs font-semibold text-accent mb-2">So bekommst du einen API Key:</h4>
           <ol class="text-xs text-text-secondary space-y-1.5 list-decimal list-inside">
-            <li>Gehe zu <span class="font-medium text-accent">console.anthropic.com</span></li>
-            <li>Erstelle ein Konto oder logge dich ein</li>
-            <li>Navigiere zu <span class="font-medium">API Keys</span> im Dashboard</li>
-            <li>Klicke auf <span class="font-medium">"Create Key"</span></li>
-            <li>Kopiere den Key (beginnt mit <code class="bg-bg-primary px-1 py-0.5 rounded text-[11px]">sk-ant-...</code>)</li>
-            <li>Füge ihn oben ein</li>
+            {#each providerMeta.helpSteps as step}
+              <li>{step}</li>
+            {/each}
           </ol>
-          <p class="text-[10px] text-text-muted mt-2">
-            Kosten: ca. $0.01-0.05 pro Retain-Test (10 Fragen). Ein neues Konto bekommt $5 Guthaben gratis.
-          </p>
+          {#if providerMeta.costNote}
+            <p class="text-[10px] text-text-muted mt-2">{providerMeta.costNote}</p>
+          {/if}
         </div>
       {/if}
 
@@ -357,14 +429,9 @@
         <label for="llmModel" class="text-xs font-medium text-text-muted mb-1.5 block">Modell</label>
         <select id="llmModel" bind:value={llmModel}
           class="w-full rounded-lg bg-bg-primary border border-border px-3 py-2 text-sm text-text-primary">
-          {#if llmProvider === "claude"}
-            <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5</option>
-            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
-          {:else}
-            <option value="llama3.1">Llama 3.1</option>
-            <option value="mistral">Mistral</option>
-            <option value="gemma2">Gemma 2</option>
-          {/if}
+          {#each providerMeta.models as model}
+            <option value={model.value}>{model.label}</option>
+          {/each}
         </select>
       </div>
     </div>

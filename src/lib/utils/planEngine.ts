@@ -10,12 +10,19 @@
 // Interfaces
 // ---------------------------------------------------------------------------
 
+export interface VacationDayEntry {
+  date: string;
+  type: "anki-only" | "full-rest";
+}
+
 export interface PlanConfig {
   startDate: string;           // ISO date, default "2026-04-06"
   examDate: string;            // ISO date, default "2026-10-14"
   semesterEndDate: string;     // ISO date, default "2026-07-20"
   juneVacation: { start: string; end: string };
   septVacation: { start: string; end: string };
+  /** New flexible vacation days (takes precedence over juneVacation/septVacation) */
+  vacationDays?: VacationDayEntry[];
   weekendsOff: boolean;
   semesterHoursPerDay: number; // 2-3
   fulltimeHoursPerDay: number; // 6-8
@@ -56,6 +63,12 @@ export interface CalendarDay {
   ankiTarget: number;
   retainTestScheduled: boolean;
   isKreuzenOnly: boolean;
+  /** Pharma review day – references original pharma AMBOSS days */
+  pharmaReview?: {
+    subject: string;
+    chapters: string[];
+    originalDayNumbers: number[];
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -132,14 +145,23 @@ export function getPhaseForDate(date: Date, config: PlanConfig): Phase {
   const examDate = parseDate(config.examDate);
   const examPrepStart = addDays(examDate, -EXAM_PREP_DAYS + 1); // inclusive
 
-  // September vacation: complete rest
-  if (isInRange(date, config.septVacation.start, config.septVacation.end)) {
-    return 'vacation-sept';
-  }
-
-  // June vacation: Anki review only
-  if (isInRange(date, config.juneVacation.start, config.juneVacation.end)) {
-    return 'vacation-june';
+  // New flexible vacation days (takes precedence)
+  if (config.vacationDays && config.vacationDays.length > 0) {
+    const dateStr = formatDate(date);
+    const vacDay = config.vacationDays.find((d) => d.date === dateStr);
+    if (vacDay) {
+      return vacDay.type === 'full-rest' ? 'vacation-sept' : 'vacation-june';
+    }
+  } else {
+    // Legacy: range-based vacations
+    // September vacation: complete rest
+    if (isInRange(date, config.septVacation.start, config.septVacation.end)) {
+      return 'vacation-sept';
+    }
+    // June vacation: Anki review only
+    if (isInRange(date, config.juneVacation.start, config.juneVacation.end)) {
+      return 'vacation-june';
+    }
   }
 
   // Exam prep window
@@ -148,22 +170,15 @@ export function getPhaseForDate(date: Date, config: PlanConfig): Phase {
   }
 
   const semesterEnd = parseDate(config.semesterEndDate);
-  const juneVacEnd = parseDate(config.juneVacation.end);
-  const septVacStart = parseDate(config.septVacation.start);
 
-  // After September vacation but before exam prep
-  if (date.getTime() > parseDate(config.septVacation.end).getTime() && date.getTime() < examPrepStart.getTime()) {
-    return 'vollzeit-late';
-  }
-
-  // After semester end, before or up to September vacation start
-  if (date.getTime() > semesterEnd.getTime() && date.getTime() < septVacStart.getTime()) {
+  // After semester end → Vollzeit phases
+  if (date.getTime() > semesterEnd.getTime() && date.getTime() < examPrepStart.getTime()) {
     return 'vollzeit';
   }
 
-  // After June vacation end, up to semester end
-  if (date.getTime() > juneVacEnd.getTime() && date.getTime() <= semesterEnd.getTime()) {
-    return 'semester-late';
+  // During semester
+  if (date.getTime() <= semesterEnd.getTime()) {
+    return 'semester';
   }
 
   // Before (or during early) semester -- default semester phase
@@ -509,6 +524,69 @@ export function getProgressPercent(calendar: CalendarDay[]): number {
  *
  * Returns the fully populated CalendarDay array.
  */
+/** Interval in calendar days between pharma review insertions. */
+const PHARMA_REVIEW_INTERVAL_DAYS = 25; // ~3.5 weeks
+
+/**
+ * After all AMBOSS days are placed, insert pharma review days into empty
+ * schedulable slots every ~25 days after the last pharma content day.
+ */
+function insertPharmaReviews(
+  calendar: CalendarDay[],
+  ambossDays: AmbossDay[],
+  config: PlanConfig
+): CalendarDay[] {
+  if (!config.pharmaPrioritized) return calendar;
+
+  // Collect all pharma days that were actually scheduled
+  const pharmaDays = ambossDays.filter(isPharmaDay);
+  if (pharmaDays.length === 0) return calendar;
+
+  // Find the last calendar day that has pharma content
+  let lastPharmaCalIndex = -1;
+  for (let i = calendar.length - 1; i >= 0; i--) {
+    if (calendar[i].ambossDay && isPharmaDay(calendar[i].ambossDay!)) {
+      lastPharmaCalIndex = i;
+      break;
+    }
+  }
+  if (lastPharmaCalIndex < 0) return calendar;
+
+  const examPrepStart = addDays(parseDate(config.examDate), -EXAM_PREP_DAYS + 1);
+  const pharmaChapters = pharmaDays.flatMap((d) => d.chapters);
+  const pharmaDayNumbers = pharmaDays.map((d) => d.day_number);
+
+  // Walk forward from lastPharmaCalIndex, inserting reviews at intervals
+  let daysSinceLastReview = 0;
+
+  for (let i = lastPharmaCalIndex + 1; i < calendar.length; i++) {
+    const cal = calendar[i];
+    const calDate = parseDate(cal.date);
+
+    // Stop before exam prep
+    if (calDate.getTime() >= examPrepStart.getTime()) break;
+
+    // Only count schedulable days
+    if (!isSchedulablePhase(cal.phase)) continue;
+
+    daysSinceLastReview++;
+
+    // Insert review if interval reached and slot is empty
+    if (daysSinceLastReview >= PHARMA_REVIEW_INTERVAL_DAYS && cal.ambossDay === null) {
+      cal.pharmaReview = {
+        subject: "Pharmakologie",
+        chapters: pharmaChapters,
+        originalDayNumbers: pharmaDayNumbers,
+      };
+      cal.splitPart = "both";
+      cal.splitFraction = 1.0;
+      daysSinceLastReview = 0;
+    }
+  }
+
+  return calendar;
+}
+
 export function buildStudyPlan(
   ambossDays: AmbossDay[],
   config?: Partial<PlanConfig>
@@ -516,5 +594,6 @@ export function buildStudyPlan(
   const fullConfig: PlanConfig = { ...getDefaultConfig(), ...config };
   const reordered = reorderAmbossDays(ambossDays, fullConfig.pharmaPrioritized);
   const calendar = generateCalendar(fullConfig);
-  return stretchPlan(reordered, calendar, fullConfig);
+  const stretched = stretchPlan(reordered, calendar, fullConfig);
+  return insertPharmaReviews(stretched, reordered, fullConfig);
 }

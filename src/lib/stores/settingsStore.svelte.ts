@@ -1,5 +1,10 @@
 import { getDb } from "$lib/api/db";
 
+export interface VacationDay {
+  date: string;   // YYYY-MM-DD
+  type: "anki-only" | "full-rest";
+}
+
 export interface Settings {
   planStartDate: string;
   examDate: string;
@@ -49,6 +54,7 @@ const defaultSettings: Settings = {
 };
 
 let settings = $state<Settings>({ ...defaultSettings });
+let vacationDays = $state<VacationDay[]>([]);
 let loaded = $state(false);
 
 export function getSettings(): Settings {
@@ -57,6 +63,10 @@ export function getSettings(): Settings {
 
 export function isLoaded(): boolean {
   return loaded;
+}
+
+export function getVacationDays(): VacationDay[] {
+  return vacationDays;
 }
 
 export async function loadSettings(): Promise<void> {
@@ -114,6 +124,19 @@ export async function loadSettings(): Promise<void> {
           (row.widget_mode as string) ?? defaultSettings.widgetMode,
       };
     }
+    // Load vacation days from separate table
+    try {
+      const vacRows = await db.select<{ date: string; type: string }[]>(
+        "SELECT date, type FROM vacation_days ORDER BY date"
+      );
+      vacationDays = vacRows.map((r) => ({
+        date: r.date,
+        type: r.type === "full-rest" ? "full-rest" : "anki-only",
+      }));
+    } catch {
+      vacationDays = [];
+    }
+
     loaded = true;
   } catch (error) {
     console.error("Failed to load settings:", error);
@@ -180,5 +203,58 @@ export async function saveSettings(
     );
   } catch (error) {
     console.error("Failed to save settings:", error);
+  }
+}
+
+// --- Vacation days CRUD ---
+
+export async function addVacationDay(date: string, type: VacationDay["type"] = "anki-only"): Promise<void> {
+  try {
+    const db = await getDb();
+    await db.execute(
+      "INSERT OR REPLACE INTO vacation_days (date, type) VALUES (?, ?)",
+      [date, type]
+    );
+    // Update local state
+    const existing = vacationDays.findIndex((d) => d.date === date);
+    if (existing >= 0) {
+      vacationDays[existing] = { date, type };
+    } else {
+      vacationDays = [...vacationDays, { date, type }].sort((a, b) => a.date.localeCompare(b.date));
+    }
+  } catch (error) {
+    console.error("Failed to add vacation day:", error);
+  }
+}
+
+export async function addVacationRange(start: string, end: string, type: VacationDay["type"] = "anki-only"): Promise<void> {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const dates: string[] = [];
+  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    dates.push(d.toISOString().slice(0, 10));
+  }
+  for (const date of dates) {
+    await addVacationDay(date, type);
+  }
+}
+
+export async function removeVacationDay(date: string): Promise<void> {
+  try {
+    const db = await getDb();
+    await db.execute("DELETE FROM vacation_days WHERE date = ?", [date]);
+    vacationDays = vacationDays.filter((d) => d.date !== date);
+  } catch (error) {
+    console.error("Failed to remove vacation day:", error);
+  }
+}
+
+export async function clearAllVacationDays(): Promise<void> {
+  try {
+    const db = await getDb();
+    await db.execute("DELETE FROM vacation_days");
+    vacationDays = [];
+  } catch (error) {
+    console.error("Failed to clear vacation days:", error);
   }
 }

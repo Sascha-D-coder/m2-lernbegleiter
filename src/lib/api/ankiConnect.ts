@@ -107,3 +107,58 @@ export async function getHighYieldCards(
 export async function getReviewsByDay(): Promise<[number, number][]> {
   return ankiInvoke<[number, number][]>("getNumCardsReviewedByDay");
 }
+
+/** Bring Anki to foreground on macOS via `open -a Anki` */
+export async function bringAnkiToFront(): Promise<boolean> {
+  try {
+    const { Command } = await import("@tauri-apps/plugin-shell");
+    const cmd = Command.create("open", ["-a", "Anki"]);
+    const output = await cmd.execute();
+    return output.code === 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Open a specific deck for review in Anki and bring it to foreground */
+export async function guiDeckReview(deckName: string): Promise<boolean> {
+  try {
+    await ankiInvoke("guiDeckReview", { name: deckName });
+  } catch {
+    // guiDeckReview may fail if deck has no due cards — try browser instead
+    try {
+      await ankiInvoke("guiDeckBrowser");
+    } catch {
+      // Navigation failed, but we still try to bring Anki to front
+    }
+  }
+  return bringAnkiToFront();
+}
+
+/** Open the Anki deck browser and bring it to foreground */
+export async function guiDeckBrowser(): Promise<boolean> {
+  try {
+    await ankiInvoke("guiDeckBrowser");
+  } catch {
+    // Navigation may fail, but we still bring Anki to front
+  }
+  return bringAnkiToFront();
+}
+
+/** Count unseen (new) cards per deck – returns { "deckName": count } */
+export async function getUnseenCountPerDeck(
+  decks: string[]
+): Promise<Record<string, number>> {
+  const result: Record<string, number> = {};
+  for (const deck of decks) {
+    try {
+      const cards = await ankiInvoke<number[]>("findCards", {
+        query: `"deck:${deck}" is:new`,
+      });
+      result[deck] = cards.length;
+    } catch {
+      result[deck] = -1; // unknown
+    }
+  }
+  return result;
+}
